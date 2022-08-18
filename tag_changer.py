@@ -3,7 +3,6 @@ import re
 import eyed3
 import shutil
 
-# SOURCE_DIR = Path('/mnt/d/Music/tag_change')
 SOURCE_DIR = Path(Path.cwd(), 'test_tag_change')
 TARGET_DIR = Path(Path.cwd(), 'target_dir')
 
@@ -15,13 +14,24 @@ PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
 # избавляет от цифр в начале
 PATTERN_TO_NUMBER = re.compile(r'(\d*\s?[.-]?\s?)?(.+)')
 
+datas = []
+
 print('copying...')
 shutil.rmtree(TARGET_DIR, ignore_errors=True)
 shutil.copytree(SOURCE_DIR, TARGET_DIR)
 
-# def tag_change(path: Path):
-#     for path_to_file in path.iterdir():
-#         file = path_to_file.relative_to(SOURCE_DIR)
+
+def tag_change(target_dir):
+    for file in target_dir.iterdir():
+        if file.is_dir():
+            datas.append(file.name)
+            tag_change(file)
+        elif file.is_file():
+            datas.append(file.name)
+
+# def tag_change(source_dir: Path, target_dir: Path):
+#     for path_to_file in target_dir.iterdir():
+#         file = path_to_file.relative_to(target_dir)
 #         flag = False
 #
 #         # определяет что папка с артистами
@@ -33,6 +43,7 @@ shutil.copytree(SOURCE_DIR, TARGET_DIR)
 #         if path_to_file.is_dir():
 #             tag_change(path_to_file)
 #         elif file.suffix in EXT_TO_SEARCH:
+#
 #             song = eyed3.load(path_to_file)
 #
 #             # получить альбом и обложку для песни в дирах в исполнителях
@@ -79,7 +90,7 @@ shutil.copytree(SOURCE_DIR, TARGET_DIR)
 #                 song.tag.album = album
 #
 #                 if path_to_image:
-#                     with open(path_to_image,'wb+') as album_cover:
+#                     with open(path_to_image, 'wb+') as album_cover:
 #                         album_cover.write(image)
 #                     with open(path_to_image, 'rb') as image:
 #                         song.tag.images.set(3, image.read(), "image/jpeg")
@@ -96,6 +107,8 @@ shutil.copytree(SOURCE_DIR, TARGET_DIR)
 #
 #             song.tag.save()
 #             print('---' * (level - 1) + '>', file)
-#
-#
-# tag_change(SOURCE_DIR)
+
+
+tag_change(TARGET_DIR)
+print(datas)
+

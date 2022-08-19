@@ -7,7 +7,7 @@ SOURCE_DIR = Path(Path.cwd(), 'test_tag_change')
 TARGET_DIR = Path(Path.cwd(), 'target_dir')
 
 EXT_TO_SEARCH = ['.mp3', '.m4a']
-ARTIST_DIRS = ['`Legends', '`Легенды']
+ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды']
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
@@ -18,6 +18,32 @@ PATTERN_TO_NUMBER = re.compile(r'(^\d+\s?\W?\s?)(?!$)')
 print('copying...')
 shutil.rmtree(TARGET_DIR, ignore_errors=True)
 shutil.copytree(SOURCE_DIR, TARGET_DIR)
+
+
+def create_image(file_dir, album):
+    images = list(file_dir.glob('*.jpg'))
+    if images:
+        image = images[0]
+        if image.stem != album:
+            image.rename(Path(file_dir, album+'.jpg'))
+        return image
+    else:
+        for file_path in file_dir.iterdir():
+            song = eyed3.load(file_path)
+            try:
+                image = song.tag.images[0].image_data
+            except:
+                image = None
+            if image:
+                with open(Path(file_dir, album+'.jpg'), 'wb+') as album_cover:
+                    album_cover.write(image)
+
+
+def delete_images(target_dir):
+    images = target_dir.glob('**/*.jpg')
+    for image in images:
+        print(f'Delete image {image}')
+        image.unlink()
 
 
 def tag_change(target_dir):
@@ -39,27 +65,38 @@ def tag_change(target_dir):
             except:
                 album = ''
 
+            # песни в дирах (как в the best)
+            # TODO мб придумать для каждой такой диры обложку и загрузить в исходник
             if level == 2:
                 artist = name[0]
                 title = name[1]
                 album = file.parts[0]
                 print('---' * (level - 1) + '>', [artist, title, album])
+            # песни в дирах и в альбоме
+            # TODO брать картинку из файла (его ещё надо найти) помещать её на обложку всех файлов потом удалять
             if level == 3:
+                # песни в исполнителе без альбома (создаётся папка с альбомом)
+                # TODO брать картинку из файла (его ещё надо найти) помещать её на обложку всех файлов потом удалять
                 if file.parts[0] in ARTIST_DIRS:
                     Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
-                    file_path.replace(Path(file_path.parent, album, file.name))
+                    new_file_path = file_path.replace(Path(file_path.parent, album, file.name))
                     artist = file.parts[1]
                     title = name[1]
+                    create_image(new_file_path.parent, album)
                     print('---' * (level - 1) + '>', [artist, title, album])
                     continue
                 artist = name[0]
                 title = name[1]
                 album = file.parts[1]
+                create_image(file_path.parent, album)
                 print('---' * (level - 1) + '>', [artist, title, album])
+            # песни в исполнителях в альбомах
+            # TODO брать вложенную картинку помещать её на обложку всех файлов потом удалять
             if level == 4:
                 artist = file.parts[1]
                 title = name[0]
                 album = file.parts[2]
+                create_image(file_path.parent, album)
                 print('---' * (level - 1) + '>', [artist, title, album])
 
 # def tag_change(source_dir: Path, target_dir: Path):
@@ -143,3 +180,4 @@ def tag_change(target_dir):
 
 
 tag_change(TARGET_DIR)
+delete_images(TARGET_DIR)

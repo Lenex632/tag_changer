@@ -5,16 +5,17 @@ import shutil
 
 SOURCE_DIR = Path(Path.cwd(), 'test_tag_change')
 TARGET_DIR = Path(Path.cwd(), 'target_dir')
+DATA_FILE = Path(Path.cwd(), 'data.txt')
 
-EXT_TO_SEARCH = ['.mp3', '.m4a']
-ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды']
+ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды', 'Legends', 'Legend', 'Легенды']
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
 # избавляет от цифр в начале
 PATTERN_TO_NUMBER = re.compile(r'(^\d+\s?\W?\s?)(?!$)')
 
-
+print('creation data.txt')
+DATA_FILE.touch(exist_ok=True)
 print('copying...')
 shutil.rmtree(TARGET_DIR, ignore_errors=True)
 shutil.copytree(SOURCE_DIR, TARGET_DIR)
@@ -71,12 +72,11 @@ def tag_change(target_dir):
                 artist = name[0]
                 title = name[1]
                 album = file.parts[0]
+
                 print('---' * (level - 1) + '>', [artist, title, album])
             # песни в дирах и в альбоме
-            # TODO брать картинку из файла (его ещё надо найти) помещать её на обложку всех файлов потом удалять
             if level == 3:
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
-                # TODO брать картинку из файла (его ещё надо найти) помещать её на обложку всех файлов потом удалять
                 if file.parts[0] in ARTIST_DIRS:
                     Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
                     new_file_path = file_path.replace(Path(file_path.parent, album, file.name))
@@ -91,13 +91,16 @@ def tag_change(target_dir):
                 create_image(file_path.parent, album)
                 print('---' * (level - 1) + '>', [artist, title, album])
             # песни в исполнителях в альбомах
-            # TODO брать вложенную картинку помещать её на обложку всех файлов потом удалять
             if level == 4:
                 artist = file.parts[1]
                 title = name[0]
                 album = file.parts[2]
                 create_image(file_path.parent, album)
                 print('---' * (level - 1) + '>', [artist, title, album])
+            DATA_FILE.open(mode='w').write(f'{file}\n'
+                                       f'   {title}\n'
+                                       f'   {artist}\n'
+                                       f'   {album}\n\n')
 
 # def tag_change(source_dir: Path, target_dir: Path):
 #     for path_to_file in target_dir.iterdir():

@@ -7,14 +7,13 @@ SOURCE_DIR = Path(Path.cwd(), 'test_tag_change')
 TARGET_DIR = Path(Path.cwd(), 'target_dir')
 
 EXT_TO_SEARCH = ['.mp3', '.m4a']
-ARTIST_DIRS = ['`Legend', '`Легенды']
+ARTIST_DIRS = ['`Legends', '`Легенды']
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
 # избавляет от цифр в начале
-PATTERN_TO_NUMBER = re.compile(r'(\d*\s?[.-]?\s?)?(.+)')
+PATTERN_TO_NUMBER = re.compile(r'(^\d+\s?\W?\s?)(?!$)')
 
-datas = []
 
 print('copying...')
 shutil.rmtree(TARGET_DIR, ignore_errors=True)
@@ -22,12 +21,46 @@ shutil.copytree(SOURCE_DIR, TARGET_DIR)
 
 
 def tag_change(target_dir):
-    for file in target_dir.iterdir():
-        if file.is_dir():
-            datas.append(file.name)
-            tag_change(file)
-        elif file.is_file():
-            datas.append(file.name)
+    for file_path in target_dir.iterdir():
+        file = file_path.relative_to(TARGET_DIR)
+        level = len(file.parts)
+        if file_path.is_dir():
+            print('---'*(level-1), file.name)
+            tag_change(file_path)
+        elif file_path.is_file():
+            name = file.stem
+            name = re.sub(PATTERN_TO_NAME, '', name)
+            name = re.sub(PATTERN_TO_NUMBER, '', name, re.MULTILINE)
+            name = name.split(' - ')
+
+            song = eyed3.load(file_path)
+            try:
+                album = song.tag.album
+            except:
+                album = ''
+
+            if level == 2:
+                artist = name[0]
+                title = name[1]
+                album = file.parts[0]
+                print('---' * (level - 1) + '>', [artist, title, album])
+            if level == 3:
+                if file.parts[0] in ARTIST_DIRS:
+                    Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
+                    file_path.replace(Path(file_path.parent, album, file.name))
+                    artist = file.parts[1]
+                    title = name[1]
+                    print('---' * (level - 1) + '>', [artist, title, album])
+                    continue
+                artist = name[0]
+                title = name[1]
+                album = file.parts[1]
+                print('---' * (level - 1) + '>', [artist, title, album])
+            if level == 4:
+                artist = file.parts[1]
+                title = name[0]
+                album = file.parts[2]
+                print('---' * (level - 1) + '>', [artist, title, album])
 
 # def tag_change(source_dir: Path, target_dir: Path):
 #     for path_to_file in target_dir.iterdir():
@@ -110,5 +143,3 @@ def tag_change(target_dir):
 
 
 tag_change(TARGET_DIR)
-print(datas)
-

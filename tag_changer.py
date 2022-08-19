@@ -15,6 +15,7 @@ PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
 PATTERN_TO_NUMBER = re.compile(r'(^\d+\s?\W?\s?)(?!$)')
 
 print('creation data.txt')
+DATA_FILE.unlink(missing_ok=True)
 DATA_FILE.touch(exist_ok=True)
 print('copying...')
 shutil.rmtree(TARGET_DIR, ignore_errors=True)
@@ -50,9 +51,9 @@ def delete_images(target_dir):
 def tag_change(target_dir):
     for file_path in target_dir.iterdir():
         file = file_path.relative_to(TARGET_DIR)
-        level = len(file.parts)
+        level = len(file.parts) - 1
         if file_path.is_dir():
-            print('---'*(level-1), file.name)
+            print('---'*level, file.name)
             tag_change(file_path)
         elif file_path.is_file():
             name = file.stem
@@ -68,14 +69,12 @@ def tag_change(target_dir):
 
             # песни в дирах (как в the best)
             # TODO мб придумать для каждой такой диры обложку и загрузить в исходник
-            if level == 2:
-                artist = name[0]
+            if level == 1:
                 title = name[1]
+                artist = name[0]
                 album = file.parts[0]
-
-                print('---' * (level - 1) + '>', [artist, title, album])
             # песни в дирах и в альбоме
-            if level == 3:
+            elif level == 2:
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
                 if file.parts[0] in ARTIST_DIRS:
                     Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
@@ -83,24 +82,23 @@ def tag_change(target_dir):
                     artist = file.parts[1]
                     title = name[1]
                     create_image(new_file_path.parent, album)
-                    print('---' * (level - 1) + '>', [artist, title, album])
+                    print('---' * level + '>', [artist, title, album])
                     continue
-                artist = name[0]
                 title = name[1]
+                artist = name[0]
                 album = file.parts[1]
                 create_image(file_path.parent, album)
-                print('---' * (level - 1) + '>', [artist, title, album])
             # песни в исполнителях в альбомах
-            if level == 4:
+            elif level == 3:
                 artist = file.parts[1]
                 title = name[0]
                 album = file.parts[2]
                 create_image(file_path.parent, album)
-                print('---' * (level - 1) + '>', [artist, title, album])
-            DATA_FILE.open(mode='w').write(f'{file}\n'
-                                       f'   {title}\n'
-                                       f'   {artist}\n'
-                                       f'   {album}\n\n')
+            print('---' * level + '>', [artist, title, album])
+            DATA_FILE.open(mode='a+').write(f'{file}\n'
+                                            f'   title: {title}\n'
+                                            f'   artist: {artist}\n'
+                                            f'   album: {album}\n\n')
 
 # def tag_change(source_dir: Path, target_dir: Path):
 #     for path_to_file in target_dir.iterdir():

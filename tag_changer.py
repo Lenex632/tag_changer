@@ -9,11 +9,10 @@ DATA_FILE = Path(Path.cwd(), 'data.txt')
 
 ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды', 'Legends', 'Legend', 'Легенды']
 
-# TODO что-то придумать с названиями из цифр + множественные исполнители через запятую
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
 # избавляет от цифр в начале
-PATTERN_TO_NUMBER = re.compile(r'(^\d+\s?\W?\s?)(?!$)')
+PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | ))')
 
 print('creation data.txt\n')
 DATA_FILE.unlink(missing_ok=True)
@@ -99,29 +98,34 @@ def tag_change(target_dir):
             if level == 1:
                 title = name[1]
                 artist = name[0]
+                if len(artist.split(',')) > 1:
+                    title = f'{title} (feat. {artist.split(",", maxsplit=1)[1].strip()})'
+                    artist = artist.split(",")[0].strip()
                 album = file.parts[0]
                 image = None
                 add_tags(song, file_path, title, artist, album, image)
             # песни в дирах и в альбоме
             elif level == 2:
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
+                title = name[1]
                 if file.parts[0] in ARTIST_DIRS:
                     Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
                     new_file_path = file_path.replace(Path(file_path.parent, album, file.name))
                     artist = file.parts[1]
-                    title = name[1]
                     image = create_image(new_file_path.parent, album)
                     add_tags(eyed3.load(new_file_path), new_file_path, title, artist, album, image)
                     write_data_file(new_file_path.relative_to(TARGET_DIR), level, artist, title, album, image)
                     continue
-                title = name[1]
                 artist = name[0]
+                if len(artist.split(',')) > 1:
+                    title = f'{title} (feat. {artist.split(",", maxsplit=1)[1].strip()})'
+                    artist = artist.split(",")[0].strip()
                 album = file.parts[1]
                 image = create_image(file_path.parent, album)
             # песни в исполнителях в альбомах (level=3)
             else:
-                artist = file.parts[1]
                 title = name[0]
+                artist = file.parts[1]
                 album = file.parts[2]
                 image = create_image(file_path.parent, album)
             add_tags(song, file_path, title, artist, album, image)

@@ -132,9 +132,4 @@ dmypy.json
 target_dir/
 source_dir/
 data.txt
-source_dir/
-data.txt
-source_dir/
-data.txt
-source_dir/
-data.txt
+data.xlsx

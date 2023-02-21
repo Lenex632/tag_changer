@@ -2,21 +2,23 @@ from pathlib import Path
 import re
 import eyed3
 import shutil
+import pandas as pd
 
 SOURCE_DIR = Path(Path.cwd(), 'test_tag_change')
 TARGET_DIR = Path(Path.cwd(), 'target_dir')
-DATA_FILE = Path(Path.cwd(), 'data.txt')
+DATA_FILE = Path(Path.cwd(), 'data.xlsx')
+DATA_FILE_COMPARE = Path(Path.cwd(), 'data_compare.xlsx')
+
+data_list = []  # todo
 
 ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды', 'Legends', 'Legend', 'Легенды']
 
 # избавляет от скобок
-PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP).*\)')
+PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP|ft|EN).*\)')
 # избавляет от цифр в начале
 PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | ))')
 
-print('creation data.txt\n')
-DATA_FILE.unlink(missing_ok=True)
-DATA_FILE.touch(exist_ok=True)
+# todo что-то придумать с копированием/переносом/пересозданием
 print('copying...\n')
 shutil.rmtree(TARGET_DIR, ignore_errors=True)
 shutil.copytree(SOURCE_DIR, TARGET_DIR)
@@ -27,7 +29,7 @@ def create_image(file_dir, album):
     if images:
         image = images[0]
         if image.stem != album:
-            image = image.rename(Path(file_dir, album+'.jpg'))
+            image = image.rename(Path(file_dir, album + '.jpg'))
         return image
     else:
         for file_path in file_dir.iterdir():
@@ -36,20 +38,12 @@ def create_image(file_dir, album):
                 image = song.tag.images[0].image_data
             except:
                 image = None
-                return image
             if image:
-                with open(Path(file_dir, album+'.jpg'), 'wb+') as album_cover:
+                with open(Path(file_dir, album + '.jpg'), 'wb+') as album_cover:
                     album_cover.write(image)
-                return Path(file_dir, album+'.jpg')
-
-
-def write_data_file(file, level, artist, title, album, image):
-    print('---' * level + '>', [artist, title, album])
-    DATA_FILE.open(mode='a+').write(f'{file}\n'
-                                    f'   title: {title}\n'
-                                    f'   artist: {artist}\n'
-                                    f'   album: {album}\n'
-                                    f'   image: {image}\n\n')
+                return Path(file_dir, album + '.jpg')
+            else:
+                return image
 
 
 def delete_images(target_dir):
@@ -59,7 +53,10 @@ def delete_images(target_dir):
         image.unlink()
 
 
-def add_tags(song, file_path, title, artist, album, image):
+def add_tags(song, file_path, title, artist, album, image, level):
+    data_list.append((file_path, artist, title, album, image))
+    print('---' * level + '>', [artist, title, album])
+
     song.initTag()
     song.tag.remove(file_path)
 
@@ -88,6 +85,7 @@ def tag_change(target_dir):
             name = name.split(' - ')
 
             song = eyed3.load(file_path)
+            # Нужно для песен в исполнителе без альбома (создаётся папка с альбомом) (см. level == 2, ARTIST_DIRS)
             try:
                 album = song.tag.album
             except:
@@ -103,7 +101,6 @@ def tag_change(target_dir):
                     artist = artist.split(",")[0].strip()
                 album = file.parts[0]
                 image = None
-                add_tags(song, file_path, title, artist, album, image)
             # песни в дирах и в альбоме
             elif level == 2:
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
@@ -113,8 +110,7 @@ def tag_change(target_dir):
                     new_file_path = file_path.replace(Path(file_path.parent, album, file.name))
                     artist = file.parts[1]
                     image = create_image(new_file_path.parent, album)
-                    add_tags(eyed3.load(new_file_path), new_file_path, title, artist, album, image)
-                    write_data_file(new_file_path.relative_to(TARGET_DIR), level, artist, title, album, image)
+                    add_tags(eyed3.load(new_file_path), new_file_path, title, artist, album, image, level)
                     continue
                 artist = name[0]
                 if len(artist.split(',')) > 1:
@@ -122,16 +118,43 @@ def tag_change(target_dir):
                     artist = artist.split(",")[0].strip()
                 album = file.parts[1]
                 image = create_image(file_path.parent, album)
-            # песни в исполнителях в альбомах (level=3)
+            # песни в исполнителях в альбомах (level == 3)
             else:
                 title = name[0]
                 artist = file.parts[1]
                 album = file.parts[2]
                 image = create_image(file_path.parent, album)
-            add_tags(song, file_path, title, artist, album, image)
-            write_data_file(file, level, artist, title, album, image)
+            add_tags(song, file_path, title, artist, album, image, level)
 
 
-tag_change(TARGET_DIR)
-print('\n')
-delete_images(TARGET_DIR)
+def analyze(dir1: Path, dir2: Path):
+    data_1 = []
+    data_2 = []
+    go_through(dir1, dir1, data_1)
+    go_through(dir2, dir2, data_2)
+    data_copy = data_1.copy()
+    for data in data_1:
+        if data in data_2:
+            data_copy.remove(data)
+            data_2.remove(data)
+    print(data_1)
+    print(data_2)
+
+
+def go_through(core: Path, directory: Path, data: list):
+    for file in directory.iterdir():
+        if file.is_dir():
+            go_through(core, file, data)
+        else:
+            data.append(file.relative_to(core))
+
+
+if __name__ == '__main__':
+    tag_change(TARGET_DIR)
+    print('\n')
+    delete_images(TARGET_DIR)
+    files, artists, titles, albums, images = zip(*data_list)
+    df = pd.DataFrame({'file': files, 'artist': artists, 'title': titles, 'album': albums, 'image': images})
+    df.to_excel(DATA_FILE)
+
+    analyze(SOURCE_DIR, TARGET_DIR)

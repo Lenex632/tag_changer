@@ -10,19 +10,25 @@ import eyed3
 import shutil
 import pandas as pd
 
+# Windows
 SOURCE_DIR = Path('/mnt/f/Music/source_dir')
 TARGET_DIR = Path('/mnt/f/Music/target_dir')
-DATA_FILE = Path(Path.cwd(), 'data.xlsx')
-DATA_FILE_COMPARE = Path(Path.cwd(), 'data_compare.xlsx')
+# Linux
+SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
+TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
+
+# DATA_FILE = Path(Path.cwd(), 'data.xlsx')
+# DATA_FILE_COMPARE = Path(Path.cwd(), 'data_compare.xlsx')
 
 data_list = []  # todo
 
 ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды', 'Legends', 'Legend', 'Легенды']
 
 # избавляет от скобок
-PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|OP|ft|EN).*\)')
+PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|ft|OP|EN).*\)')
 # избавляет от цифр в начале
 PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | ))')
+PATTERN_TO_FEAT = re.compile(r'(feat|ft)\.?\s?')
 
 # todo что-то придумать с копированием/переносом/пересозданием
 # print('copying...\n')
@@ -105,9 +111,17 @@ def tag_change(target_dir):
                 # todo бахнуть ошибку
                 title = name[1]
                 artist = name[0]
+                try:
+                    feat = re.sub(PATTERN_TO_FEAT, '', title).split('(')[1][:-1]
+                except:
+                    feat = ''
+
                 if len(artist.split(',')) > 1:
-                    title = f'{title} (feat. {artist.split(",", maxsplit=1)[1].strip()})'
-                    artist = artist.split(",")[0].strip()
+                    feat = f'{feat + ", " if feat else ""}' + ', '.join(map(lambda a: a.strip(), artist.split(',')))
+                    # feat = feat + ', '.join(artist.split(','))
+                    artist = artist.split(',')[0].strip()
+                if feat:
+                    title = title + f' ({feat})'
                 album = file.parts[0]
                 image = None
             # песни в дирах и в альбоме
@@ -168,9 +182,9 @@ if __name__ == '__main__':
     tag_change(TARGET_DIR)
     print('\n')
     delete_images(TARGET_DIR)
-    files, artists, titles, albums, images = zip(*data_list)
-    df = pd.DataFrame({'file': files, 'artist': artists, 'title': titles, 'album': albums, 'image': images})
-    df.to_excel(DATA_FILE)
+    # files, artists, titles, albums, images = zip(*data_list)
+    # df = pd.DataFrame({'file': files, 'artist': artists, 'title': titles, 'album': albums, 'image': images})
+    # df.to_excel(DATA_FILE)
 
     # analyze(SOURCE_DIR, TARGET_DIR)
 

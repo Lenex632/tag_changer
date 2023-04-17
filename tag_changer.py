@@ -10,6 +10,7 @@ import re
 import eyed3
 
 from eyed3.core import AudioFile
+import db_controller as db
 
 # todo доделать логи, переместить в отдельный файл
 log = logging.getLogger(__name__)
@@ -17,6 +18,20 @@ log.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(logging.Formatter(fmt='[%(asctime)s %(levelname)s] %(message)s'))
 log.addHandler(handler)
+
+client, mydb, collections = db.db_connection()
+music_collection = collections['music_collection']
+users_collection = collections['users_collection']
+libraries_collection = collections['libraries_collection']
+
+# Windows
+SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
+TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
+# Linux
+SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
+TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
+
+ARTIST_DIRS = ['Legends', 'Legend', 'Легенды']
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!(feat|ft|Feat|Ft|OP|EN)(\s|\.|\d+)).*\)$')
@@ -162,6 +177,27 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
 
             title, artist = change_feat(title, artist)
             add_tags(song, file_path, title, artist, album, image, level)
+
+
+def load_data_to_db(directory: Path, core_directory: Path) -> None:
+    for file in directory.iterdir():
+        if file.is_dir():
+            load_data_to_db(file, core_directory)
+        elif file.is_file():
+            file_relative_position = file.relative_to(core_directory)
+            song = eyed3.load(file)
+            try:
+                title = song.tag.title
+                artist = song.tag.artist
+                album = song.tag.album
+                if song.tag.images[0].image_data:
+                    image = True
+                else:
+                    image = False
+            except:
+                title = artist = album = None
+                image = False
+                log.error(f'Can`t read parameter in file {file}')
 
 
 if __name__ == '__main__':

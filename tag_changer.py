@@ -1,15 +1,12 @@
-# добавить инфы в папки
-# F:\Music\target_dir\The Best\Brutal Legend
-# F:\Music\target_dir\Legend\Green Day\DOS
-# F:\Music\target_dir\Legend\Green Day\Insomniac
-# F:\Music\target_dir\Legend\Green Day\Tre
-# F:\Music\target_dir\Legend\Green Day\UNO
+# TODO мб придумать для каждой такой диры обложку и загрузить в исходник
+# TODO добавить инфы в папки
 import logging
 import sys
 from pathlib import Path
 import re
 import eyed3
 
+# todo доделать логи, переместить в отдельный файл
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(stream=sys.stdout)
@@ -17,18 +14,19 @@ handler.setFormatter(logging.Formatter(fmt='[%(asctime)s %(levelname)s] %(messag
 log.addHandler(handler)
 
 # Windows
-SOURCE_DIR = Path('/mnt/f/Music/source_dir')
-TARGET_DIR = Path('/mnt/f/Music/target_dir')
+SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
+TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
 # Linux
 SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
 TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
 
-ARTIST_DIRS = ['`Legends', '`Legend', '`Легенды', 'Legends', 'Legend', 'Легенды']
+ARTIST_DIRS = ['Legends', 'Legend', 'Легенды']
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|ft|OP|EN).*\)')
 # избавляет от цифр в начале
 PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | ))')
+# паттерн для feat
 PATTERN_TO_FEAT = re.compile(r'(feat|ft)\.?\s?')
 
 # todo что-то придумать с копированием/переносом/пересозданием
@@ -122,7 +120,6 @@ def tag_change(target_dir):
                 album = ''
 
             # песни в дирах (как в the best)
-            # TODO мб придумать для каждой такой диры обложку и загрузить в исходник
             if level == 1:
                 if len(name) > 1:
                     title = name[1]

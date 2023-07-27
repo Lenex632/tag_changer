@@ -144,6 +144,7 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
             song = eyed3.load(file_path)
 
             # Нужно для песен в исполнителе без альбома (создаётся папка с альбомом) (см. level == 2, ARTIST_DIRS)
+            # TODO не появляется на тестах
             try:
                 album = song.tag.album
             except:

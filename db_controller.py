@@ -16,16 +16,16 @@ def insert_document(collection, data):
     return collection.insert_one(data).inserted_id
 
 
-def find_document(collection, elements, multiple=False):
+def find_document(collection, *elements, multiple=False):
     """
     Function to retrieve single or multiple documents from a provided collection using a dictionary containing
     a document's elements.
     """
     if multiple:
-        results = collection.find(elements)
+        results = collection.find(*elements)
         return [r for r in results]
     else:
-        return collection.find_one(elements)
+        return collection.find_one(*elements)
 
 
 def update_document(collection, query_elements, new_values):
@@ -33,6 +33,14 @@ def update_document(collection, query_elements, new_values):
     Function to update a single document in a collection.
     """
     collection.update_one(query_elements, {'$set': new_values})
+
+
+def find_duplicates(collection):
+    return list(collection.aggregate([
+        {'$group': {'_id': ['$artist', '$title'], 'count': {'$sum': 1}}},
+        {'$match': {'_id': {'$ne': 'null'}, 'count': {'$gt': 1}}},
+        {'$project': {'name': '$_id', '_id': 0}}
+    ]))
 
 
 if __name__ == '__main__':

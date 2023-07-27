@@ -49,11 +49,12 @@ def create_image(file_dir: Path, album: str) -> Path | None:
             image = image.rename(Path(file_dir, album + '.jpg'))
         return image
     else:
+        # TODO пошаманить тут (не очень нравится логика и структура)
         for file_path in file_dir.iterdir():
             song = eyed3.load(file_path)
             try:
                 image = song.tag.images[0].image_data
-            except:
+            except IndexError:
                 image = None
             if image:
                 with open(Path(file_dir, album + '.jpg'), 'wb+') as album_cover:
@@ -178,27 +179,6 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
 
             title, artist = change_feat(title, artist)
             add_tags(song, file_path, title, artist, album, image, level)
-
-
-def load_data_to_db(directory: Path, core_directory: Path) -> None:
-    for file in directory.iterdir():
-        if file.is_dir():
-            load_data_to_db(file, core_directory)
-        elif file.is_file():
-            file_relative_position = file.relative_to(core_directory)
-            song = eyed3.load(file)
-            try:
-                title = song.tag.title
-                artist = song.tag.artist
-                album = song.tag.album
-                if song.tag.images[0].image_data:
-                    image = True
-                else:
-                    image = False
-            except:
-                title = artist = album = None
-                image = False
-                log.error(f'Can`t read parameter in file {file}')
 
 
 if __name__ == '__main__':

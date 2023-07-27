@@ -28,6 +28,18 @@ def find_document(collection, *elements, multiple=False):
         return collection.find_one(*elements)
 
 
+def delete_document(collection, elements, multiple=False):
+    """
+    Function to delete single or multiple documents from a provided collection using a dictionary containing
+    a document's elements.
+    """
+    if multiple:
+        results = collection.delete_one(elements)
+        return [r for r in results]
+    else:
+        return collection.delete_many(elements)
+
+
 def update_document(collection, query_elements, new_values):
     """
     Function to update a single document in a collection.
@@ -36,6 +48,9 @@ def update_document(collection, query_elements, new_values):
 
 
 def find_duplicates(collection):
+    """
+    Function to find duplicate documents in one collection.
+    """
     return list(collection.aggregate([
         {'$group': {'_id': ['$artist', '$title'], 'count': {'$sum': 1}}},
         {'$match': {'_id': {'$ne': 'null'}, 'count': {'$gt': 1}}},

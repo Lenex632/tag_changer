@@ -49,6 +49,9 @@ def load_data_to_db(directory: Path, core_directory: Path) -> None:
 
 def find_duplicates():
     duplicates = db.find_duplicates(music_collection)
+    if not duplicates:
+        print(f'There are no duplicates in {TARGET_DIR}')
+
     for duplicate in duplicates:
         for artist, title in duplicate.values():
             elements = db.find_document(
@@ -57,22 +60,41 @@ def find_duplicates():
                 {'file_path': 1, '_id': 0},
                 multiple=True
             )
-            print()
-            for element in elements:
-                print(element['file_path'])
-            print()
-            for element in elements:
-                print(element['file_path'])
-                answer = None
-                while answer not in ['y', 'n']:
-                    answer = input('delete? [y/n] ')
-                    match answer:
-                        case 'y':
-                            print('deleted')
-                        case 'n':
-                            print('save')
-                        case _:
-                            print('please enter y/n')
+
+            print(f'{artist} - {title}')
+            for i in range(len(elements)):
+                print(f'{i + 1}. {elements[i]["file_path"]}')
+
+            success = False
+            while not success:
+                elements_to_delete = input('\nEnter the numbers of elements you want to delete (in format 1 2 3) or 0 to console: ')
+
+                try:
+                    elements_to_delete = list(map(int, elements_to_delete.split()))
+                except ValueError:
+                    print(f'ValueError. You enter not numbers or not in write format')
+                    continue
+
+                if 0 in elements_to_delete:
+                    print('Consoled\n')
+                    break
+
+                for e in elements_to_delete:
+                    if e - 1 not in range(len(elements)):
+                        print(f'Index {e} out of range')
+                        break
+                else:
+                    success = True
+                if not success:
+                    continue
+
+                for e in elements_to_delete:
+                    db.delete_document(music_collection, {'file_path': elements[e - 1]['file_path']})
+                    Path(TARGET_DIR, elements[e - 1]['file_path']).unlink()
+                    print(f'{elements[e - 1]["file_path"]} was deleted')
+                print()
+
+                success = True
 
 
 def _load_data_to_db(library, file_path, title, artist, album, image):

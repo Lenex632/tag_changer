@@ -21,7 +21,7 @@ libraries_collection = collections['libraries_collection']
 SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
 TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
 # Linux
-SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
+SOURCE_DIR = Path('/home/lenex/code/tag_changeer/source_dir')
 TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
 
 
@@ -75,36 +75,44 @@ def find_duplicates():
                             print('please enter y/n')
 
 
+def synchronization(dir1, dir2):
+    pass
+
+
 def _load_data_to_db(library, file_path, title, artist, album, image):
-    if db.find_document(music_collection, {'file_path': str(file_path)}):
-        db.update_document(
-            music_collection,
-            {'file_path': str(file_path)},
-            {
-                'library': str(library),
-                'file_path': str(file_path),
-                'title': title,
-                'artist': artist,
-                'album': album,
-                'image': image
-            }
-        )
+    new_data = {
+        'library': str(library),
+        'file_path': str(file_path),
+        'title': title,
+        'artist': artist,
+        'album': album,
+        'image': image,
+        'valid': False
+    }
+    # TODO
+    '''
+        Попробовать решить проблему синхронизации через поле валидности (уникальности)
+        
+        Изначально при записи в БД - файл невалидный (мб уникальный). Тогда же проверяется, есть ли в БД такой же файл
+        в другой библиотеке. Если есть - файл валидный, если нет - так и остаётся невалидным.
+        
+        Вначале при изменении - находится такой же файл в другой библиотеке и становится невалидным. В конце изменения -
+        изменяемый файл проходит процедуру валидацию, его "прошлый близнец" не проходит. "Близнец" может стать валидным,
+        только если изменяемый файл остался таким же, или в последующем появился другой файл, способный стать его 
+        "близнецом".
+        
+        При синхронизации искать в двух библиотеках (мб перед этим обновить их валидность в обоих библиотеках) все
+        невалидные файлы и решать, что с ними делать.
+    '''
+    if db.find_document(music_collection, {'file_path': str(file_path), 'library': str(library)}):
+        db.update_document(music_collection, {'file_path': str(file_path), 'library': str(library)}, new_data)
         log.info(f'{artist} - {title} updated')
     else:
-        db.insert_document(
-            music_collection,
-            {
-                'library': str(library),
-                'file_path': str(file_path),
-                'title': title,
-                'artist': artist,
-                'album': album,
-                'image': image
-            }
-        )
+        db.insert_document(music_collection, new_data)
         log.info(f'{artist} - {title} added to {library}')
 
 
 if __name__ == '__main__':
-    # load_data_to_db(TARGET_DIR, TARGET_DIR)
-    find_duplicates()
+    load_data_to_db(SOURCE_DIR, SOURCE_DIR)
+    load_data_to_db(TARGET_DIR, TARGET_DIR)
+    # find_duplicates()

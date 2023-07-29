@@ -98,10 +98,30 @@ def find_duplicates():
 
 
 def synchronization(dir1, dir2):
+    """
+        Попробовать решить проблему синхронизации через поле валидности (уникальности)
+
+         + Изначально при записи в БД - файл невалидный (мб уникальный). Тогда же проверяется, есть ли в БД такой же файл
+        в другой библиотеке. Если есть - файл валидный, если нет - так и остаётся невалидным.
+
+         + Вначале при изменении - находится такой же файл в другой библиотеке и становится невалидным. В конце изменения -
+        изменяемый файл проходит процедуру валидацию, его "прошлый близнец" не проходит. "Близнец" может стать валидным,
+        только если изменяемый файл остался таким же, или в последующем появился другой файл, способный стать его
+        "близнецом".
+
+        При синхронизации искать в двух библиотеках (мб перед этим обновить их валидность в обеих библиотеках) все
+        невалидные файлы и решать, что с ними делать.
+
+        Возникает проблема при локальном удалении файла. Валидность не обновляется. Решение: нужно добавлять время
+        обновления файла и сравнивать удалилось что-то или нет. В конце обновления базы - искать файлы с самым старым
+        временем и запрашивать удаление из базы.
+    """
+    # TODO
+
     pass
 
 
-def _load_data_to_db(library, file_path, title, artist, album, image):
+def _load_data_to_db(library, file_path, title, artist, album, image, synchronized=False):
     new_data = {
         'library': str(library),
         'file_path': str(file_path),
@@ -109,27 +129,31 @@ def _load_data_to_db(library, file_path, title, artist, album, image):
         'artist': artist,
         'album': album,
         'image': image,
-        'valid': False
+        'synchronized': synchronized,
+        'updated_time': None
     }
-    # TODO
-    '''
-        Попробовать решить проблему синхронизации через поле валидности (уникальности)
-        
-        Изначально при записи в БД - файл невалидный (мб уникальный). Тогда же проверяется, есть ли в БД такой же файл
-        в другой библиотеке. Если есть - файл валидный, если нет - так и остаётся невалидным.
-        
-        Вначале при изменении - находится такой же файл в другой библиотеке и становится невалидным. В конце изменения -
-        изменяемый файл проходит процедуру валидацию, его "прошлый близнец" не проходит. "Близнец" может стать валидным,
-        только если изменяемый файл остался таким же, или в последующем появился другой файл, способный стать его 
-        "близнецом".
-        
-        При синхронизации искать в двух библиотеках (мб перед этим обновить их валидность в обоих библиотеках) все
-        невалидные файлы и решать, что с ними делать.
-    '''
     if db.find_document(music_collection, {'file_path': str(file_path), 'library': str(library)}):
+        new_data.pop('library')
+        synch_data = db.find_document(music_collection, {'file_path': str(file_path)}, multiple=True)
+        if len(synch_data) > 1:
+            for data in synch_data:
+                if not data['synchronized']:
+                    synchronized = True
+                db.update_document(music_collection, data, {'synchronized': synchronized})
+
+        new_data['library'] = str(library)
+        new_data['synchronized'] = synchronized
         db.update_document(music_collection, {'file_path': str(file_path), 'library': str(library)}, new_data)
         log.info(f'{artist} - {title} updated')
     else:
+        new_data.pop('library')
+        synch_data = db.find_document(music_collection, new_data)
+        if synch_data:
+            synchronized = True
+            db.update_document(music_collection, new_data, {'synchronized': synchronized})
+            new_data['synchronized'] = synchronized
+
+        new_data['library'] = str(library)
         db.insert_document(music_collection, new_data)
         log.info(f'{artist} - {title} added to {library}')
 

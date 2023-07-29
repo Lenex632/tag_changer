@@ -57,18 +57,6 @@ def find_duplicates(collection):
     ]))
 
 
-def inner_join(collection, query1, query2):
-    print(list(collection.aggregate([
-        {'$group': {'_id': ['$artist', '$title', '$file_path'], 'count': {'$sum': 1}}},
-        {'$match': {'_id': {'$ne': 'null'}, 'count': {'$lt': 2}}},
-        {'$project': {'name': '$_id', '_id': 0}}
-    ])))
-
-
 if __name__ == '__main__':
     client, mydb, collections = db_connection()
-    inner_join(
-        collections['music_collection'],
-        {'library': '/home/lenex/code/tag_changeer/source_dir'},
-        {'library': '/home/lenex/code/tag_changeer/target_dir'}
-    )
+    print(find_document(collections['music_collection'], {}, multiple=True))

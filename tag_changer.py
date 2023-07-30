@@ -8,8 +8,7 @@ from pathlib import Path
 import re
 import eyed3
 
-import db_controller as db
-
+from logger import log
 from eyed3.core import AudioFile
 from logger import log
 

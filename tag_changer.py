@@ -1,28 +1,15 @@
 # TODO
 #  - мб придумать для каждой такой диры обложку и загрузить в исходник
 #  - добавить инфы в папки
-#  - что-то придумать с копированием/переносом/пересозданием
+#  - сделать что-то с копированием. пока что данная реализация не нужна. по сути нужен запуск скрипта в source, после
+#  чего ручками перекидывать в target. было бы здорово работать сразу в target.
 
-import logging
-import sys
 from pathlib import Path
 import re
 import eyed3
 
 from eyed3.core import AudioFile
-import db_controller as db
-
-# todo доделать логи, переместить в отдельный файл
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-handler = logging.StreamHandler(stream=sys.stdout)
-handler.setFormatter(logging.Formatter(fmt='[%(asctime)s %(levelname)s] %(message)s'))
-log.addHandler(handler)
-
-client, mydb, collections = db.db_connection()
-music_collection = collections['music_collection']
-users_collection = collections['users_collection']
-libraries_collection = collections['libraries_collection']
+from logger import log
 
 # Windows
 SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')

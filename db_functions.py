@@ -59,4 +59,4 @@ def find_duplicates(collection, library):
 
 if __name__ == '__main__':
     client, mydb, collections = db_connection()
-    print(find_document(collections['music_collection'], {}, multiple=True))
+    print(find_duplicates(collections['music_collection'], '/home/lenex/code/tag_changeer/source_dir'))

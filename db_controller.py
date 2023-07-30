@@ -34,10 +34,12 @@ def load_data_to_db(directory: Path, core_directory: Path) -> None:
             _load_data_to_db(core_directory.__str__(), file_relative_position.__str__(), title, artist, album, image)
 
 
+# TODO разобраться с дубликатами из разных библиотек
 def find_duplicates(library: str) -> None:
     duplicates = db.find_duplicates(music_collection, library)
     if not duplicates:
-        print(f'There are no duplicates in {library}')
+        log.info(f'There are no duplicates in {library}')
+        return
 
     for duplicate in duplicates:
         for artist, title in duplicate.values():
@@ -80,6 +82,8 @@ def synchronization(dir1: str, dir2: str) -> None:
         {'synchronized': False, '$or': [{'library': dir1}, {'library': dir2}]},
         multiple=True
     )
+    if not unsync_files:
+        log.info('Everything is in sync')
     for i in range(len(unsync_files)):
         print(f"{i + 1}. {unsync_files[i]['library']}{unsync_files[i]['file_path']} ------ "
               f"{unsync_files[i]['artist']} - {unsync_files[i]['title']}")
@@ -111,7 +115,7 @@ def _load_data_to_db(library: str, file_path: str, title: str, artist: str, albu
         new_data['library'] = library
         new_data['synchronized'] = synchronized
         db.update_document(music_collection, {'file_path': file_path, 'library': library}, new_data)
-        log.info(f'{artist} - {title} updated')
+        log.info(f'{artist} - {title} updated in {library}')
     else:
         new_data.pop('library')
         synch_data = db.find_document(music_collection, new_data)
@@ -128,21 +132,21 @@ def _load_data_to_db(library: str, file_path: str, title: str, artist: str, albu
 def _ask_to_delete(elements: list) -> None:
     success = False
     while not success:
-        elements_to_delete = input('\nEnter the numbers of elements you want to delete (in format 1 2 3) or 0 to console: ')
+        elements_to_delete = input('\nEnter the numbers of elements you want to delete (in format 1 2 3) or 0 to cancel: ')
 
         try:
             elements_to_delete = list(map(int, elements_to_delete.split()))
         except ValueError:
-            print(f'ValueError. You enter not numbers or not in write format')
+            log.warning(f'ValueError. You enter not numbers or not in write format')
             continue
 
         if 0 in elements_to_delete:
-            print('Consoled\n')
+            log.info('Canceled\n')
             break
 
         for e in elements_to_delete:
             if e - 1 not in range(len(elements)):
-                print(f'Index {e} out of range')
+                log.warning(f'Index {e} out of range')
                 break
         else:
             success = True
@@ -152,7 +156,7 @@ def _ask_to_delete(elements: list) -> None:
         for e in elements_to_delete:
             db.delete_document(music_collection, elements[e - 1])
             Path(elements[e - 1]['library'], elements[e - 1]['file_path']).unlink()
-            print(f'{elements[e - 1]["file_path"]} was deleted from db')
+            log.info(f'{elements[e - 1]["file_path"]} was deleted from db')
         print()
 
         success = True
@@ -161,6 +165,5 @@ def _ask_to_delete(elements: list) -> None:
 if __name__ == '__main__':
     # load_data_to_db(SOURCE_DIR, SOURCE_DIR)
     # load_data_to_db(TARGET_DIR, TARGET_DIR)
-    # synchronization(TARGET_DIR.__str__(), SOURCE_DIR.__str__())
-    # find_duplicates()
-    log.info('some message1')
+    # find_duplicates(TARGET_DIR)
+    synchronization(TARGET_DIR.__str__(), SOURCE_DIR.__str__())

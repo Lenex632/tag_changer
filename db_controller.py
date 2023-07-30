@@ -46,7 +46,7 @@ def update_document(collection, query_elements, new_values):
     collection.update_one(query_elements, {'$set': new_values})
 
 
-def find_duplicates(collection):
+def find_duplicates(collection, library):
     """
     Function to find duplicate documents in one collection.
     """

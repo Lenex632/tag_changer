@@ -22,6 +22,13 @@ TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
 
 ARTIST_DIRS = ['Legends', 'Legend', 'Легенды']
 
+'''
+settings.txt
+
+SOURCE_DIR=/home/lenex/code/tag_changeer/target_dir -------- C:\\Users\\IvanK\\Music\\target_dir
+ARTIST_DIRS=Legends, Legend, Легенды
+'''
+
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|ft|OP|EN).*\)')
 # избавляет от цифр в начале
@@ -99,13 +106,13 @@ def change_feat(title, artist):
     return title, artist
 
 
-def tag_change(target_dir):
+def tag_change(target_dir, artist_dirs):
     for file_path in target_dir.iterdir():
         file = file_path.relative_to(TARGET_DIR)
         level = len(file.parts) - 1
         if file_path.is_dir():
             log.debug(f'{"---" * level}{file.name}')
-            tag_change(file_path)
+            tag_change(file_path, artist_dirs)
         elif file_path.is_file() and file.suffix != '.jpg':
             name = file.stem
             name = re.sub(PATTERN_TO_NAME, '', name)
@@ -135,7 +142,7 @@ def tag_change(target_dir):
                 else:
                     title = name[0]
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
-                if file.parts[0] in ARTIST_DIRS:
+                if file.parts[0] in artist_dirs:
                     Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
                     new_file_path = file_path.replace(Path(file_path.parent, album, file.name))
                     artist = file.parts[1]
@@ -159,6 +166,6 @@ def tag_change(target_dir):
 
 
 if __name__ == '__main__':
-    tag_change(TARGET_DIR)
+    tag_change(TARGET_DIR, ARTIST_DIRS)
     print('\n')
     delete_images(TARGET_DIR)

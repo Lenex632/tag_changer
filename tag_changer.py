@@ -1,10 +1,14 @@
-# TODO мб придумать для каждой такой диры обложку и загрузить в исходник
-# TODO добавить инфы в папки
+# TODO
+#  - мб придумать для каждой такой диры обложку и загрузить в исходник
+#  - добавить инфы в папки
+
 import logging
 import sys
 from pathlib import Path
 import re
 import eyed3
+
+from eyed3.core import AudioFile
 
 # todo доделать логи, переместить в отдельный файл
 log = logging.getLogger(__name__)
@@ -20,21 +24,21 @@ TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
 SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
 TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
 
-ARTIST_DIRS = ['Legends', 'Legend', 'Легенды']
+ARTIST_DIRS = ['Legend', 'Легенды']
 
 '''
 settings.txt
 
 SOURCE_DIR=/home/lenex/code/tag_changeer/target_dir -------- C:\\Users\\IvanK\\Music\\target_dir
-ARTIST_DIRS=Legends, Legend, Легенды
+ARTIST_DIRS=Legend, Легенды
 '''
 
 # избавляет от скобок
-PATTERN_TO_NAME = re.compile(r'\s?\((?!feat|ft|OP|EN).*\)')
+PATTERN_TO_NAME = re.compile(r'\s?\((?!(feat|ft|Feat|Ft|OP|EN)(\s|\.)).*\)$')
 # избавляет от цифр в начале
-PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | ))')
+PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | |\)))')
 # паттерн для feat
-PATTERN_TO_FEAT = re.compile(r'(feat|ft)\.?\s?')
+PATTERN_TO_FEAT = re.compile(r'(\(|\s)(feat|ft|Feat|Ft)(\.|\s)(.*?)(\)?$)')
 
 # todo что-то придумать с копированием/переносом/пересозданием
 # log.info('copying...\n')
@@ -42,7 +46,7 @@ PATTERN_TO_FEAT = re.compile(r'(feat|ft)\.?\s?')
 # shutil.copytree(SOURCE_DIR, TARGET_DIR)
 
 
-def create_image(file_dir, album):
+def create_image(file_dir: Path, album: str) -> Path | None:
     images = list(file_dir.glob('*.jpg'))
     if images:
         image = images[0]
@@ -65,16 +69,15 @@ def create_image(file_dir, album):
                 return None
 
 
-def delete_images(target_dir):
+def delete_images(target_dir: Path) -> None:
     images = target_dir.glob('**/*.jpg')
     for image in images:
         log.info(f'Delete image {image}')
         image.unlink()
 
 
-def add_tags(song, file_path, title, artist, album, image, level):
+def add_tags(song: AudioFile, file_path: Path, title: str, artist: str, album: str, image: Path, level: int) -> None:
     log.debug(f'{"---" * level}>[{artist}, {title}, {album}]')
-
     song.initTag()
     song.tag.remove(file_path)
 
@@ -87,14 +90,15 @@ def add_tags(song, file_path, title, artist, album, image, level):
             song.tag.images.set(3, image.read(), "image/jpeg")
 
     song.tag.save()
+    log.info(f'{artist} - {title} successfully save in {album}')
 
 
-def change_feat(title, artist):
+def change_feat(title: str, artist: str) -> [str, str]:
     try:
-        feat = re.sub(PATTERN_TO_FEAT, '', title).split('(')
+        feat = re.split(PATTERN_TO_FEAT, title)
         title = feat[0].strip()
-        feat = feat[1][:-1]
-    except:
+        feat = feat[4].strip()
+    except IndexError:
         feat = ''
 
     if len(artist.split(',')) > 1:
@@ -106,27 +110,50 @@ def change_feat(title, artist):
     return title, artist
 
 
-def tag_change(target_dir, artist_dirs):
+def prepare_name(file: Path) -> list[str]:
+    name = file.stem
+    name = re.sub(PATTERN_TO_NAME, '', name)
+    name = re.sub(PATTERN_TO_NUMBER, '', name, re.MULTILINE)
+    name = name.split(' - ')
+
+    # if len(name) > 1:
+    #     title = name[1]
+    # else:
+    #     title = name[0]
+
+    return name
+
+
+def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None:
+    """
+    Основная функция, рекурсивно обрабатывает файлы в target_dir относительно core_dir. Файлы в artist_dirs
+    обрабатываются по особому паттерну.
+
+    :param core_dir: неизменная директория относительно которой обрабатывается target_dir.
+    :param target_dir: текущая директория, меняется соответственно уровню погружения.
+    :param artist_dirs: список с особыми директориями.
+    :return: None
+    """
+
     for file_path in target_dir.iterdir():
-        file = file_path.relative_to(TARGET_DIR)
+        file = file_path.relative_to(core_dir)
         level = len(file.parts) - 1
+
         if file_path.is_dir():
             log.debug(f'{"---" * level}{file.name}')
-            tag_change(file_path, artist_dirs)
-        elif file_path.is_file() and file.suffix != '.jpg':
-            name = file.stem
-            name = re.sub(PATTERN_TO_NAME, '', name)
-            name = re.sub(PATTERN_TO_NUMBER, '', name, re.MULTILINE)
-            name = name.split(' - ')
+            tag_change(core_dir, file_path, artist_dirs)
 
+        elif file_path.is_file() and file.suffix != '.jpg':
+            name = prepare_name(file)
             song = eyed3.load(file_path)
+
             # Нужно для песен в исполнителе без альбома (создаётся папка с альбомом) (см. level == 2, ARTIST_DIRS)
             try:
                 album = song.tag.album
             except:
                 album = ''
 
-            # песни в дирах (как в the best)
+            # песни в директориях (как в the best)
             if level == 1:
                 if len(name) > 1:
                     title = name[1]
@@ -134,8 +161,9 @@ def tag_change(target_dir, artist_dirs):
                     title = name[0]
                 artist = name[0]
                 album = file.parts[0]
-                image = None
-            # песни в дирах и в альбоме
+                image = None  # TODO пока что не добавлять картинки в обычные папки. Изменить после доработки БД.
+
+            # песни в директориях и в альбоме
             elif level == 2:
                 if len(name) > 1:
                     title = name[1]
@@ -152,6 +180,7 @@ def tag_change(target_dir, artist_dirs):
                 artist = name[0]
                 album = file.parts[1]
                 image = create_image(file_path.parent, album)
+
             # песни в исполнителях в альбомах (level == 3)
             else:
                 if len(name) > 1:
@@ -161,11 +190,12 @@ def tag_change(target_dir, artist_dirs):
                 artist = file.parts[1]
                 album = file.parts[2]
                 image = create_image(file_path.parent, album)
+
             title, artist = change_feat(title, artist)
             add_tags(song, file_path, title, artist, album, image, level)
 
 
 if __name__ == '__main__':
-    tag_change(TARGET_DIR, ARTIST_DIRS)
+    tag_change(TARGET_DIR, TARGET_DIR, ARTIST_DIRS)
     print('\n')
     delete_images(TARGET_DIR)

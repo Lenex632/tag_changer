@@ -135,8 +135,8 @@ def open_readme_file() -> None:
 def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar) -> None:
     print('tag_changer start')
     target_dir = Path(target_dir.get())
-    artist_dirs = artist_dirs.get()
-    tag_change(target_dir, artist_dirs)
+    artist_dirs = artist_dirs.get().split(',')  # TODO потестить "Легенды"
+    tag_change(target_dir, target_dir, artist_dirs)
     print('\n')
     delete_images(target_dir)
 

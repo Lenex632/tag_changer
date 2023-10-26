@@ -132,13 +132,29 @@ def open_readme_file() -> None:
     print('Opening readme file')
 
 
-def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar) -> None:
+def end_tag_changer(window: Tk, error: Exception = None) -> None:
+    print(f'tag_changer finish')
+    if error:
+        messagebox.showerror('Что-то пошло не так =(', str(error))
+        window.destroy()
+    messagebox.showinfo(
+        'Tag Changer завершил работу',
+        'Файлы были изменены. Нажмите "ОК", чтобы выйти'
+    )
+    window.destroy()
+
+
+def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, window: Tk) -> None:
     print('tag_changer start')
     target_dir = Path(target_dir.get())
-    artist_dirs = artist_dirs.get().split(',')  # TODO потестить "Легенды"
-    tag_change(target_dir, target_dir, artist_dirs)
+    artist_dirs = artist_dirs.get().split(',')
+    try:
+        tag_change(target_dir, target_dir, artist_dirs)
+    except Exception as e:
+        end_tag_changer(window, e)
     print('\n')
     delete_images(target_dir)
+    end_tag_changer(window)
 
 
 def parse_settings(window: Tk) -> dict | None:
@@ -204,7 +220,7 @@ def main():
 
     save_btn.bind('<ButtonPress-1>', lambda x: save_settings(sd_value, ad_value))
     reset_btn.bind('<ButtonPress-1>', lambda x: press_reset_button(sd_value=sd_value, ad_value=ad_value))
-    start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(sd_value, ad_value))
+    start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(sd_value, ad_value, window))
 
     settings = parse_settings(window)
     if settings:

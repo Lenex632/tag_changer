@@ -1,6 +1,7 @@
 # TODO
 #  - мб придумать для каждой такой диры обложку и загрузить в исходник
 #  - добавить инфы в папки
+#  - что-то придумать с копированием/переносом/пересозданием
 
 import logging
 import sys
@@ -17,33 +18,12 @@ handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(logging.Formatter(fmt='[%(asctime)s %(levelname)s] %(message)s'))
 log.addHandler(handler)
 
-# Windows
-SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
-TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
-# Linux
-SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
-TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
-
-ARTIST_DIRS = ['Legend', 'Легенды']
-
-'''
-settings.txt
-
-SOURCE_DIR=/home/lenex/code/tag_changeer/target_dir -------- C:\\Users\\IvanK\\Music\\target_dir
-ARTIST_DIRS=Legend, Легенды
-'''
-
 # избавляет от скобок
-PATTERN_TO_NAME = re.compile(r'\s?\((?!(feat|ft|Feat|Ft|OP|EN)(\s|\.)).*\)$')
+PATTERN_TO_NAME = re.compile(r'\s?\((?!(feat|ft|Feat|Ft|OP|EN)(\s|\.|\d+)).*\)$')
 # избавляет от цифр в начале
-PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | |\)))')
+PATTERN_TO_NUMBER = re.compile(r'(^\d+(\W | \W | |\)))', re.MULTILINE)
 # паттерн для feat
 PATTERN_TO_FEAT = re.compile(r'(\(|\s)(feat|ft|Feat|Ft)(\.|\s)(.*?)(\)?$)')
-
-# todo что-то придумать с копированием/переносом/пересозданием
-# log.info('copying...\n')
-# shutil.rmtree(TARGET_DIR, ignore_errors=True)
-# shutil.copytree(SOURCE_DIR, TARGET_DIR)
 
 
 def create_image(file_dir: Path, album: str) -> Path | None:
@@ -93,9 +73,24 @@ def add_tags(song: AudioFile, file_path: Path, title: str, artist: str, album: s
     log.info(f'{artist} - {title} successfully save in {album}')
 
 
+def prepare_name(file: Path) -> tuple[list[str], str]:
+    name = file.stem
+    name = re.sub(PATTERN_TO_NAME, '', name)
+    name = PATTERN_TO_NAME.sub('', name)
+    name = PATTERN_TO_NUMBER.sub('', name)
+    name = name.split(' - ')
+
+    if len(name) > 1:
+        title = name[1]
+    else:
+        title = name[0]
+
+    return name, title
+
+
 def change_feat(title: str, artist: str) -> [str, str]:
     try:
-        feat = re.split(PATTERN_TO_FEAT, title)
+        feat = PATTERN_TO_FEAT.split(title)
         title = feat[0].strip()
         feat = feat[4].strip()
     except IndexError:
@@ -108,20 +103,6 @@ def change_feat(title: str, artist: str) -> [str, str]:
         title = title + f' (feat. {feat})'
 
     return title, artist
-
-
-def prepare_name(file: Path) -> list[str]:
-    name = file.stem
-    name = re.sub(PATTERN_TO_NAME, '', name)
-    name = re.sub(PATTERN_TO_NUMBER, '', name, re.MULTILINE)
-    name = name.split(' - ')
-
-    # if len(name) > 1:
-    #     title = name[1]
-    # else:
-    #     title = name[0]
-
-    return name
 
 
 def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None:
@@ -144,7 +125,7 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
             tag_change(core_dir, file_path, artist_dirs)
 
         elif file_path.is_file() and file.suffix != '.jpg':
-            name = prepare_name(file)
+            name, title = prepare_name(file)
             song = eyed3.load(file_path)
 
             # Нужно для песен в исполнителе без альбома (создаётся папка с альбомом) (см. level == 2, ARTIST_DIRS)
@@ -155,20 +136,12 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
 
             # песни в директориях (как в the best)
             if level == 1:
-                if len(name) > 1:
-                    title = name[1]
-                else:
-                    title = name[0]
                 artist = name[0]
                 album = file.parts[0]
                 image = None  # TODO пока что не добавлять картинки в обычные папки. Изменить после доработки БД.
 
             # песни в директориях и в альбоме
             elif level == 2:
-                if len(name) > 1:
-                    title = name[1]
-                else:
-                    title = name[0]
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
                 if file.parts[0] in artist_dirs:
                     Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
@@ -183,10 +156,6 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
 
             # песни в исполнителях в альбомах (level == 3)
             else:
-                if len(name) > 1:
-                    title = name[1]
-                else:
-                    title = name[0]
                 artist = file.parts[1]
                 album = file.parts[2]
                 image = create_image(file_path.parent, album)
@@ -196,6 +165,22 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
 
 
 if __name__ == '__main__':
+    '''
+    settings.txt
+    
+    SOURCE_DIR=/home/lenex/code/tag_changeer/target_dir -------- C:/Code/tag_changer/target_dir
+    ARTIST_DIRS=Legend, Легенды
+    '''
+
+    # Windows
+    SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
+    TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
+    # Linux
+    SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
+    TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
+
+    ARTIST_DIRS = ['Legend', 'Легенды']
+
     tag_change(TARGET_DIR, TARGET_DIR, ARTIST_DIRS)
     print('\n')
     delete_images(TARGET_DIR)

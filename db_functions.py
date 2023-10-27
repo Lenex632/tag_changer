@@ -3,7 +3,6 @@ from typing import Any, Mapping
 from pymongo import *
 from pymongo.collection import Collection
 from pymongo.database import Database
-from pymongo.typings import _DocumentType
 
 
 def db_connection() -> tuple[MongoClient, Database, dict[str: Collection]]:
@@ -19,7 +18,7 @@ def db_connection() -> tuple[MongoClient, Database, dict[str: Collection]]:
     return client, mydb, collections
 
 
-def insert_document(collection: Collection, data: _DocumentType) -> Any:
+def insert_document(collection: Collection, data: dict) -> Any:
     """
     Function to insert a document into a collection and return the document's id.
     """
@@ -49,7 +48,7 @@ def delete_document(collection: Collection, elements: Mapping[str, Any], multipl
         collection.delete_one(elements)
 
 
-def update_document(collection: Collection, query_elements, new_values) -> None:
+def update_document(collection: Collection, query_elements: Mapping[str, Any], new_values: Mapping[str, Any]) -> None:
     """
     Function to update a single document in a collection.
     """

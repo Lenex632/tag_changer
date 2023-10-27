@@ -15,28 +15,29 @@ libraries_collection = collections['libraries_collection']
 
 @dataclass
 class MusicData:
-    core_directory: str = None
-    file_relative_position: str = None
+    library: str = None
+    file_path: str = None
     title: str = None
     artist: str = None
     album: str = None
     image: bool = None
-    synchronized: bool = False
-    updated_time: None = None
 
 
-def load_data_to_db(core_dir: Path, target_dir: Path) -> None:
+def load_data_to_db(core_dir: Path, target_dir: Path, is_main_lib: bool = True) -> None:
     """
     Пробегаемся по directory, относительно core_directory, записываем файлы в БД с помощью _load_data_to_db()
     :param core_dir: неизменная директория относительно которой обрабатывается target_dir.
-    :param target_dir: текущая директория, меняется соответственно уровню погружения
+    :param target_dir: текущая директория, меняется соответственно уровню погружения.
+    :param is_main_lib: флаг, указывает записывать ли в "основную" библиотеку или "вторичную".
     :return: None
     """
     for file in target_dir.iterdir():
         if file.is_dir():
             load_data_to_db(core_dir, file)
         elif file.is_file():
-            data = MusicData(core_directory=str(core_dir), file_relative_position=str(file.relative_to(core_dir)))
+            data = MusicData()
+            data.library = 'Main' if is_main_lib else str(core_dir)
+            data.file_path = str(file.relative_to(core_dir))
             song = eyed3.load(file)
             try:
                 data.title = song.tag.title
@@ -51,6 +52,11 @@ def load_data_to_db(core_dir: Path, target_dir: Path) -> None:
                 continue
 
             _load_data_to_db(data)
+
+
+def _load_data_to_db(data: MusicData) -> None:
+    db.insert_document(music_collection, data.__dict__)
+    log.info(f'{data.artist} - {data.title} added to {data.library}')
 
 
 # TODO разобраться с дубликатами из разных библиотек
@@ -103,43 +109,6 @@ def synchronization(dir1: str, dir2: str) -> None:
     _ask_to_delete(unsync_files)
 
 
-def _load_data_to_db(data: MusicData) -> None:
-    new_data = {
-        'library': library,
-        'file_path': file_path,
-        'title': title,
-        'artist': artist,
-        'album': album,
-        'image': image,
-        'synchronized': synchronized,
-        'updated_time': None
-    }
-    if db.find_document(music_collection, {'file_path': file_path, 'library': library}):
-        new_data.pop('library')
-        synch_data = db.find_document(music_collection, {'file_path': file_path}, multiple=True)
-        if len(synch_data) > 1:
-            for data in synch_data:
-                if not data['synchronized']:
-                    synchronized = True
-                db.update_document(music_collection, data, {'synchronized': synchronized})
-
-        new_data['library'] = library
-        new_data['synchronized'] = synchronized
-        db.update_document(music_collection, {'file_path': file_path, 'library': library}, new_data)
-        log.info(f'{artist} - {title} updated in {library}')
-    else:
-        new_data.pop('library')
-        synch_data = db.find_document(music_collection, new_data)
-        if synch_data:
-            synchronized = True
-            db.update_document(music_collection, new_data, {'synchronized': synchronized})
-            new_data['synchronized'] = synchronized
-
-        new_data['library'] = library
-        db.insert_document(music_collection, new_data)
-        log.info(f'{artist} - {title} added to {library}')
-
-
 def _ask_to_delete(elements: list) -> None:
     success = False
     while not success:
@@ -175,22 +144,25 @@ def _ask_to_delete(elements: list) -> None:
 
 if __name__ == '__main__':
     '''
-        Хуярим логику:
-        
+    Хуярим логику:
+    
+        Хуярим структуру:
             1) Юзер - чел с логином и паролем:
-                - У него есть одна базовая либа с его песнями.
+                - у него есть одна базовая либа с его песнями
+                - есть доп либы, которые добавляются и удаляются ???
             2) Либа - единое собрание всей музыки, что есть у юзера:
-                - привязка к юзеру ???
+                - привязка к юзеру ??? либо создаваться в самом юзере и наполняться музыкой
                 - есть имя
-                - есть путь ???
+                - есть путь
+                - есть название
+                - есть "основная либа" у каждого юзера которая называется "Main" 
             3) Музыка - описывает файлик с музыкой:
                 - есть исполнитель - название - альбом
                 - картинка
                 - относительный путь (путь общий для всех дир на компе и на телефоне)
-                - привязка к либе ??? либо он уже в либе
-                - синхронизация ???
-                - время обновления ???
-                
+                - привязка к либе ??? либо создаётся в либе 
+                - если привязывать, то привязывать к id, имени или пути ???
+                                
         Функции:
             1) Поиск
             2) Загрузка:
@@ -198,10 +170,15 @@ if __name__ == '__main__':
                 - для каждого файла заносить его в диру
             3) Удаление
             3) Поиск дубликатов:
-                - внутренний поиск по либе силами бд !!!
+                - внутренний поиск по Main силами бд !!!
             4) Синхронизация: ???
-                - сделать одну "основную либу"
-                - при запуске синхронизации сравнивать текущую папку с "основной либой"
+                - сделать одну "основную либу" = Main
+                - при запуске синхронизации сравнивать текущую папку с Main
                 - выводить список различных файлов
                 - удалять отмеченные
+                - сделать тоже самое со второй папкой ??? сделать это одновременно, показать различия и
+                устранить их сразу после чего сначала обновить Main, а потом дополнительные !!!
     '''
+    md = MusicData('lib', 'path', 'title', 'artist', 'album', False)
+    print(md.__dict__)
+

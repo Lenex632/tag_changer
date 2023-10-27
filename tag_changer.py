@@ -159,23 +159,21 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
             add_tags(song, file_path, title, artist, album, image, level)
 
 
+ARTIST_DIRS = ['Legend', 'Легенды']
+# Windows
+SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
+TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
+# Linux
+SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
+TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
+'''
+settings.txt
+
+SOURCE_DIR=/home/lenex/code/tag_changeer/target_dir -------- C:/Code/tag_changer/target_dir
+ARTIST_DIRS=Legend, Легенды
+'''
+
 if __name__ == '__main__':
-    '''
-    settings.txt
-    
-    SOURCE_DIR=/home/lenex/code/tag_changeer/target_dir -------- C:/Code/tag_changer/target_dir
-    ARTIST_DIRS=Legend, Легенды
-    '''
-
-    # Windows
-    SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
-    TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
-    # Linux
-    SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
-    TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
-
-    ARTIST_DIRS = ['Legend', 'Легенды']
-
     tag_change(TARGET_DIR, TARGET_DIR, ARTIST_DIRS)
     print('\n')
     delete_images(TARGET_DIR)

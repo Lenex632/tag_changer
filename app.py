@@ -9,6 +9,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 
 from tag_changer import tag_change, delete_images
+from logger import log
 
 CURRENT_DIR = Path(os.path.realpath(__file__)).parent
 SETTINGS_FILE = Path(CURRENT_DIR, 'settings.txt')
@@ -29,7 +30,7 @@ def make_window() -> Tk:
     y = (sh - h) // 2
     window.geometry(f'{w}x{h}+{x}+{y}')
 
-    print(f'Making window name="{window.title()}".')
+    log.info(f'Making window name="{window.title()}".')
     return window
 
 
@@ -57,7 +58,7 @@ def make_dir_frame(target: str) -> tuple[Frame, StringVar]:
 
     frame.pack(anchor=NW, fill=X, padx=10, pady=10)
 
-    print(f'Making frame for {target}.')
+    log.info(f'Making frame for {target}.')
     return frame, value
 
 
@@ -78,7 +79,7 @@ def make_buttons_frame() -> tuple[Frame, Button, Button, Button]:
 
     buttons_frame.pack(anchor=NW, fill=X, pady=10, padx=10)
 
-    print('Making frame for buttons.')
+    log.info('Making frame for buttons.')
     return buttons_frame, reset_button, start_button, save_button
 
 
@@ -90,7 +91,7 @@ def chose_dir(dir_value: StringVar) -> None:
     else:
         dir_value.set(star_value)
 
-    print(f'Was chosen directory: {dir_value.get()}')
+    log.info(f'Was chosen directory: {dir_value.get()}')
 
 
 def save_settings(sd_value: StringVar, ad_value: StringVar) -> None:
@@ -102,7 +103,7 @@ def save_settings(sd_value: StringVar, ad_value: StringVar) -> None:
         for key, value in settings.items():
             file.write(f'{key}={value}\n')
 
-    print('Settings have been saved')
+    log.info('Settings have been saved')
 
 
 def reset_settings() -> dict:
@@ -112,14 +113,14 @@ def reset_settings() -> dict:
             file.write(f'{key}=\n')
             settings[key] = ''
 
-    print('Settings have been reset')
+    log.info('Settings have been reset')
     return settings
 
 
 def update_values(settings: dict, **kwargs) -> None:
     kwargs['sd_value'].set(settings['SOURCE_DIR'] if settings['SOURCE_DIR'] else '...')
     kwargs['ad_value'].set(', '.join(settings['ARTIST_DIRS']) if settings['ARTIST_DIRS'] else '...')
-    print('Values have been updated')
+    log.info('Values have been updated')
 
 
 def press_reset_button(**kwargs) -> None:
@@ -129,23 +130,24 @@ def press_reset_button(**kwargs) -> None:
 
 def open_readme_file() -> None:
     webbrowser.open(str(README_FILE))
-    print('Opening readme file')
+    log.info('Opening readme file')
 
 
 def end_tag_changer(window: Tk, error: Exception = None) -> None:
-    print(f'tag_changer finish')
     if error:
         messagebox.showerror('Что-то пошло не так =(', str(error))
+        log.error(error)
         window.destroy()
     messagebox.showinfo(
         'Tag Changer завершил работу',
         'Файлы были изменены. Нажмите "ОК", чтобы выйти'
     )
+    log.info(f'tag_changer finish')
     window.destroy()
 
 
 def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, window: Tk) -> None:
-    print('tag_changer start')
+    log.info('tag_changer start')
     target_dir = Path(target_dir.get())
     artist_dirs = artist_dirs.get().split(',')
     try:
@@ -187,12 +189,12 @@ def parse_settings(window: Tk) -> dict | None:
                     settings = raise_file_settings_error(window)
                     break
 
-    print(f'Finish parsing settings: {settings=}')
+    log.info(f'Finish parsing settings: {settings=}')
     return settings
 
 
 def raise_file_settings_error(window: Tk) -> dict | None:
-    print(f'Start settings file error')
+    log.info(f'Start settings file error')
     messagebox.showerror(
         'Ошибка',
         'Ваш файл настроек повреждён. Пожалуйста, исправьте файл или сбросьте настройки.'
@@ -205,10 +207,11 @@ def raise_file_settings_error(window: Tk) -> dict | None:
     if answer:
         settings = reset_settings()
     else:
+        log.error('Wrong settings file.')
         window.destroy()
         settings = None
 
-    print(f'End settings file error')
+    log.info(f'End settings file error')
     return settings
 
 

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 import eyed3
 
@@ -12,26 +13,44 @@ users_collection = collections['users_collection']
 libraries_collection = collections['libraries_collection']
 
 
-def load_data_to_db(directory: Path, core_directory: Path) -> None:
-    for file in directory.iterdir():
+@dataclass
+class MusicData:
+    core_directory: str = None
+    file_relative_position: str = None
+    title: str = None
+    artist: str = None
+    album: str = None
+    image: bool = None
+    synchronized: bool = False
+    updated_time: None = None
+
+
+def load_data_to_db(core_dir: Path, target_dir: Path) -> None:
+    """
+    Пробегаемся по directory, относительно core_directory, записываем файлы в БД с помощью _load_data_to_db()
+    :param core_dir: неизменная директория относительно которой обрабатывается target_dir.
+    :param target_dir: текущая директория, меняется соответственно уровню погружения
+    :return: None
+    """
+    for file in target_dir.iterdir():
         if file.is_dir():
-            load_data_to_db(file, core_directory)
+            load_data_to_db(core_dir, file)
         elif file.is_file():
-            file_relative_position = file.relative_to(core_directory)
+            data = MusicData(core_directory=str(core_dir), file_relative_position=str(file.relative_to(core_dir)))
             song = eyed3.load(file)
             try:
-                title = song.tag.title
-                artist = song.tag.artist
-                album = song.tag.album
+                data.title = song.tag.title
+                data.artist = song.tag.artist
+                data.album = song.tag.album
                 if list(song.tag.images) and song.tag.images[0].image_data:
-                    image = True
+                    data.image = True
                 else:
-                    image = False
+                    data.image = False
             except Exception as err:
                 log.error(f'Error: {err.__class__.__name__}. Can`t read parameter in file {file}.')
                 continue
 
-            _load_data_to_db(str(core_directory), str(file_relative_position), title, artist, album, image)
+            _load_data_to_db(data)
 
 
 # TODO разобраться с дубликатами из разных библиотек
@@ -84,8 +103,7 @@ def synchronization(dir1: str, dir2: str) -> None:
     _ask_to_delete(unsync_files)
 
 
-def _load_data_to_db(library: str, file_path: str, title: str, artist: str, album: str, image: bool,
-                     synchronized: bool = False) -> None:
+def _load_data_to_db(data: MusicData) -> None:
     new_data = {
         'library': library,
         'file_path': file_path,
@@ -156,7 +174,34 @@ def _ask_to_delete(elements: list) -> None:
 
 
 if __name__ == '__main__':
-    # load_data_to_db(SOURCE_DIR, SOURCE_DIR)
-    # load_data_to_db(TARGET_DIR, TARGET_DIR)
-    # find_duplicates(TARGET_DIR)
-    synchronization(str(TARGET_DIR), str(SOURCE_DIR))
+    '''
+        Хуярим логику:
+        
+            1) Юзер - чел с логином и паролем:
+                - У него есть одна базовая либа с его песнями.
+            2) Либа - единое собрание всей музыки, что есть у юзера:
+                - привязка к юзеру ???
+                - есть имя
+                - есть путь ???
+            3) Музыка - описывает файлик с музыкой:
+                - есть исполнитель - название - альбом
+                - картинка
+                - относительный путь (путь общий для всех дир на компе и на телефоне)
+                - привязка к либе ??? либо он уже в либе
+                - синхронизация ???
+                - время обновления ???
+                
+        Функции:
+            1) Поиск
+            2) Загрузка:
+                - проходится по дире
+                - для каждого файла заносить его в диру
+            3) Удаление
+            3) Поиск дубликатов:
+                - внутренний поиск по либе силами бд !!!
+            4) Синхронизация: ???
+                - сделать одну "основную либу"
+                - при запуске синхронизации сравнивать текущую папку с "основной либой"
+                - выводить список различных файлов
+                - удалять отмеченные
+    '''

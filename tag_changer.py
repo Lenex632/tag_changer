@@ -10,21 +10,6 @@ import eyed3
 
 from logger import log
 from eyed3.core import AudioFile
-from logger import log
-
-# Windows
-SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
-TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
-# Linux
-SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
-TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
-
-ARTIST_DIRS = ['Legend', 'Легенды']
-
-client, mydb, collections = db.db_connection()
-music_collection = collections['music_collection']
-users_collection = collections['users_collection']
-libraries_collection = collections['libraries_collection']
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!(feat|ft|Feat|Ft|OP|EN)(\s|\.|\d+)).*\)$')

@@ -7,12 +7,6 @@ import db_functions as db
 from tag_changer import SOURCE_DIR, TARGET_DIR
 
 
-client, mydb, collections = db.db_connection()
-music_collection = collections['music_collection']
-users_collection = collections['users_collection']
-libraries_collection = collections['libraries_collection']
-
-
 @dataclass
 class MusicData:
     library: str = None
@@ -33,7 +27,7 @@ def load_data_to_db(core_dir: Path, target_dir: Path, is_main_lib: bool = True) 
     """
     for file in target_dir.iterdir():
         if file.is_dir():
-            load_data_to_db(core_dir, file)
+            load_data_to_db(core_dir, file, is_main_lib)
         elif file.is_file():
             data = MusicData()
             data.library = 'Main' if is_main_lib else str(core_dir)
@@ -47,29 +41,28 @@ def load_data_to_db(core_dir: Path, target_dir: Path, is_main_lib: bool = True) 
                     data.image = True
                 else:
                     data.image = False
-            except Exception as err:
-                log.error(f'Error: {err.__class__.__name__}. Can`t read parameter in file {file}.')
+            except Exception as e:
+                log.error(f'Error: {type(e)}. Can`t read parameter in file {file}.\n{str(e)}')
                 continue
 
             _load_data_to_db(data)
 
 
 def _load_data_to_db(data: MusicData) -> None:
-    db.insert_document(music_collection, data.__dict__)
-    log.info(f'{data.artist} - {data.title} added to {data.library}')
+    db.insert_document(main_lib, data.__dict__)
+    log.info(f'{data.artist} - {data.title} added to {data.library}.')
 
 
-# TODO разобраться с дубликатами из разных библиотек
-def find_duplicates(library: str) -> None:
-    duplicates = db.find_duplicates(music_collection, library)
+def find_duplicates() -> None:
+    duplicates = db.find_duplicates(main_lib)
     if not duplicates:
-        log.info(f'There are no duplicates in {library}')
+        log.info(f'There are no duplicates in Main library.')
 
     for duplicate in duplicates:
         for artist, title in duplicate.values():
             elements = db.find_document(
-                music_collection,
-                {'$and': [{'title': title}, {'artist': artist}]},
+                main_lib,
+                {'$and': [{'title': title}, {'artist': artist}, {'library': 'Main'}]},
                 {'file_path': 1, '_id': 0},
                 multiple=True
             )
@@ -117,7 +110,7 @@ def _ask_to_delete(elements: list) -> None:
         try:
             elements_to_delete = list(map(int, elements_to_delete.split()))
         except ValueError:
-            log.warning(f'ValueError. You enter not numbers or not in write format')
+            print(f'ValueError. You enter not numbers or not in write format')
             continue
 
         if 0 in elements_to_delete:
@@ -125,7 +118,7 @@ def _ask_to_delete(elements: list) -> None:
             break
 
         for e in elements_to_delete:
-            if e - 1 not in range(len(elements)):
+            if e-1 not in range(len(elements)):
                 log.warning(f'Index {e} out of range')
                 break
         else:
@@ -134,51 +127,71 @@ def _ask_to_delete(elements: list) -> None:
             continue
 
         for e in elements_to_delete:
-            db.delete_document(music_collection, elements[e - 1])
-            Path(elements[e - 1]['library'], elements[e - 1]['file_path']).unlink()
-            log.info(f'{elements[e - 1]["file_path"]} was deleted from db')
+            db.delete_document(music_collection, elements[e-1])
+            # TODO удаление не сработает, если элемент в Main либе у которой нет реальных файлов, а только данные из БД.
+            # Path(elements[e-1]['library'], elements[e-1]['file_path']).unlink()
+            log.info(f'{elements[e-1]["file_path"]} was deleted from db')
         print()
 
         success = True
 
 
+client, mydb, collections = db.db_connection()
+music_collection = collections['music_collection']
+users_collection = collections['users_collection']
+libraries_collection = collections['libraries_collection']
+main_lib = collections['main_lib_collection']
+
+
+def main():
+    find_duplicates()
+
+
 if __name__ == '__main__':
+    main()
     '''
     Хуярим логику:
     
         Хуярим структуру:
             1) Юзер - чел с логином и паролем:
-                - у него есть одна базовая либа с его песнями
-                - есть доп либы, которые добавляются и удаляются ???
+                - у него есть одна базовая либа с его песнями +++
+                - есть доп либы, которые добавляются и удаляются ---
+                - что происходит при создании юзера ??? 
+                  создать юзера = создать коллекцию юзер_мэйн_либа !!!
+                  нужно ли создавать доп либы-коллекции или пхать всё в мэйн ---
             2) Либа - единое собрание всей музыки, что есть у юзера:
-                - привязка к юзеру ??? либо создаваться в самом юзере и наполняться музыкой
-                - есть имя
-                - есть путь
-                - есть название
-                - есть "основная либа" у каждого юзера которая называется "Main" 
+                - привязка к юзеру +++
+                  либо создаваться в самом юзере и наполняться музыкой ---
+                - есть имя (если это Main либа) или путь (если это доп либа) +++
+                - есть путь ---
+                - есть название ---
+                - есть "основная либа" у каждого юзера которая называется "Main" +++
+                - музыка с доп либ должна удаляться после завершения программы
             3) Музыка - описывает файлик с музыкой:
-                - есть исполнитель - название - альбом
-                - картинка
-                - относительный путь (путь общий для всех дир на компе и на телефоне)
-                - привязка к либе ??? либо создаётся в либе 
-                - если привязывать, то привязывать к id, имени или пути ???
+                - есть исполнитель - название - альбом +++
+                - картинка +++
+                - относительный путь (путь общий для всех дир на компе и на телефоне) +++
+                - привязка к либе --- ??? либо создаётся в либе +++
+                - если привязывать, то привязывать к id, имени или пути ??? ---
+                - хранить в либе +++
+                - всегда должны быть в Main либе +++
                                 
         Функции:
-            1) Поиск
-            2) Загрузка:
-                - проходится по дире
-                - для каждого файла заносить его в диру
-            3) Удаление
+            1) Поиск +++
+            2) Загрузка: +++
+                - проходится по дире +++
+                - для каждого файла заносить его в диру +++
+            3) Удаление:
+                - дубликатов
+                - файлов что удалились в процессе синхронизации
             3) Поиск дубликатов:
-                - внутренний поиск по Main силами бд !!!
+                - внутренний поиск по Main силами бд +++
             4) Синхронизация: ???
-                - сделать одну "основную либу" = Main
+                - сделать одну "основную либу" = Main +++
                 - при запуске синхронизации сравнивать текущую папку с Main
                 - выводить список различных файлов
                 - удалять отмеченные
-                - сделать тоже самое со второй папкой ??? сделать это одновременно, показать различия и
+                - сделать тоже самое со второй папкой ---
+                  сделать это одновременно, показать различия и
                 устранить их сразу после чего сначала обновить Main, а потом дополнительные !!!
     '''
-    md = MusicData('lib', 'path', 'title', 'artist', 'album', False)
-    print(md.__dict__)
-

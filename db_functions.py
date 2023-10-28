@@ -6,12 +6,8 @@ from pymongo.database import Database
 
 
 def db_connection() -> tuple[MongoClient, Database, dict[str: Collection]]:
+    # TODO обработать ошибки при неправильном подключении к БД.
     client = MongoClient('localhost', 27017)
-    try:
-        client.admin.command('ping')
-        print("Pinged your deployment. You successfully connected to MongoDB!")
-    except Exception as e:
-        print(e)
     mydb = client['tag_changer']
     collections = {f'{name}_collection': mydb[name] for name in mydb.list_collection_names()}
 
@@ -55,11 +51,13 @@ def update_document(collection: Collection, query_elements: Mapping[str, Any], n
     collection.update_one(query_elements, {'$set': new_values})
 
 
-def find_duplicates(collection: Collection, library: str) -> list:
+def find_duplicates(collection: Collection) -> list:
     """
     Function to find duplicate documents in one collection.
     """
+
     return list(collection.aggregate([
+        {'$match': {'library': 'Main'}},
         {'$group': {'_id': ['$artist', '$title'], 'count': {'$sum': 1}}},
         {'$match': {'_id': {'$ne': 'null'}, 'count': {'$gt': 1}}},
         {'$project': {'name': '$_id', '_id': 0}}

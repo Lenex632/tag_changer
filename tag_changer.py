@@ -164,7 +164,7 @@ ARTIST_DIRS = ['Legend', 'Легенды']
 SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
 TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
 # Linux
-SOURCE_DIR = Path('/home/lenex/code/tag_changeer/test_tag_change')
+SOURCE_DIR = Path('/home/lenex/code/tag_changeer/source_dir')
 TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
 '''
 settings.txt

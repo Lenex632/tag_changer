@@ -55,12 +55,24 @@ def find_duplicates(collection: Collection) -> list:
     """
     Function to find duplicate documents in one collection.
     """
-
     return list(collection.aggregate([
         {'$match': {'library': 'Main'}},
         {'$group': {'_id': ['$artist', '$title'], 'count': {'$sum': 1}}},
         {'$match': {'_id': {'$ne': 'null'}, 'count': {'$gt': 1}}},
         {'$project': {'name': '$_id', '_id': 0}}
+    ]))
+
+
+def find_different(collection: Collection, libraries: tuple[str]) -> list:
+    count = len(libraries) + 1
+    data = [{'library': 'Main'}]
+    [data.append({'library': lib}) for lib in libraries]
+
+    return list(collection.aggregate([
+            {'$match': {'$or': data}},
+            {'$group': {'_id': '$file_path', 'count': {'$sum': 1}}},
+            {'$match': {'count': {'$ne': count}}},
+            {'$project': {'file_path': '$_id', '_id': 0}}
     ]))
 
 

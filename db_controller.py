@@ -74,38 +74,28 @@ def find_duplicates() -> None:
             _ask_to_delete(elements)
 
 
-def synchronization(dir1: str, dir2: str) -> None:
-    # TODO Попробовать решить проблему синхронизации через поле валидности (уникальности)
-    #       + Изначально при записи в БД - файл невалидный (мб уникальный). Тогда же проверяется, есть ли в БД такой же
-    #  файл в другой библиотеке. Если есть - файл валидный, если нет - так и остаётся невалидным.
-    #       + Вначале при изменении - находится такой же файл в другой библиотеке и становится невалидным. В конце
-    #  изменения - изменяемый файл проходит процедуру валидацию, его "прошлый близнец" не проходит. "Близнец" может
-    #  стать валидным, только если изменяемый файл остался таким же, или в последующем появился другой файл, способный
-    #  стать его "близнецом".
-    #       +- При синхронизации искать в двух библиотеках (мб перед этим обновить их валидность в обеих библиотеках)
-    #  все невалидные файлы и решать, что с ними делать.
-    #       Возникает проблема при локальном удалении файла. Валидность не обновляется. Решение: нужно добавлять время
-    #  обновления файла и сравнивать удалилось что-то или нет. В конце обновления базы - искать файлы с самым старым
-    #  временем и запрашивать удаление из базы.
-
-    unsync_files = db.find_document(
-        music_collection,
-        {'synchronized': False, '$or': [{'library': dir1}, {'library': dir2}]},
+def synchronization_with_main(*directories: str) -> None:
+    unsync_file_path = db.find_different(main_lib, directories)
+    if not unsync_file_path:
+        print('Everything is synchronized')
+    for file_path in unsync_file_path:
+        data = db.find_document(main_lib, file_path, multiple=True)
+        print(f'{data[0]["artist"]} - {data[0]["title"]}')
+        for i in range(len(data)):
+            print(i+1, data[i]['library'], '/', data[i]['file_path'])
+        _ask_to_delete(data)
+    db.delete_document(
+        main_lib,
+        {'library': {'$ne': 'Main'}},
         multiple=True
     )
-    if not unsync_files:
-        log.info('Everything is in sync')
-    for i in range(len(unsync_files)):
-        print(f"{i + 1}. {unsync_files[i]['library']}{unsync_files[i]['file_path']} ------ "
-              f"{unsync_files[i]['artist']} - {unsync_files[i]['title']}")
-
-    _ask_to_delete(unsync_files)
 
 
 def _ask_to_delete(elements: list) -> None:
     success = False
     while not success:
-        elements_to_delete = input('\nEnter the numbers of elements you want to delete (in format 1 2 3) or 0 to cancel: ')
+        elements_to_delete = input('\nEnter the numbers of elements you want to delete '
+                                   '(in format 1 2 3) or 0 to cancel: ')
 
         try:
             elements_to_delete = list(map(int, elements_to_delete.split()))
@@ -127,7 +117,7 @@ def _ask_to_delete(elements: list) -> None:
             continue
 
         for e in elements_to_delete:
-            db.delete_document(music_collection, elements[e-1])
+            db.delete_document(main_lib, elements[e-1])
             # TODO удаление не сработает, если элемент в Main либе у которой нет реальных файлов, а только данные из БД.
             # Path(elements[e-1]['library'], elements[e-1]['file_path']).unlink()
             log.info(f'{elements[e-1]["file_path"]} was deleted from db')
@@ -137,14 +127,15 @@ def _ask_to_delete(elements: list) -> None:
 
 
 client, mydb, collections = db.db_connection()
-music_collection = collections['music_collection']
-users_collection = collections['users_collection']
-libraries_collection = collections['libraries_collection']
 main_lib = collections['main_lib_collection']
 
 
 def main():
-    find_duplicates()
+    # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
+    # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
+    # load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
+    # find_duplicates()
+    synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
 
 
 if __name__ == '__main__':
@@ -152,22 +143,22 @@ if __name__ == '__main__':
     '''
     Хуярим логику:
     
-        Хуярим структуру:
-            1) Юзер - чел с логином и паролем:
+        Хуярим структуру: !!!
+            1) Юзер - чел с логином и паролем: !!!
                 - у него есть одна базовая либа с его песнями +++
                 - есть доп либы, которые добавляются и удаляются ---
                 - что происходит при создании юзера ??? 
                   создать юзера = создать коллекцию юзер_мэйн_либа !!!
                   нужно ли создавать доп либы-коллекции или пхать всё в мэйн ---
-            2) Либа - единое собрание всей музыки, что есть у юзера:
+            2) Либа - единое собрание всей музыки, что есть у юзера: +++
                 - привязка к юзеру +++
                   либо создаваться в самом юзере и наполняться музыкой ---
                 - есть имя (если это Main либа) или путь (если это доп либа) +++
                 - есть путь ---
                 - есть название ---
                 - есть "основная либа" у каждого юзера которая называется "Main" +++
-                - музыка с доп либ должна удаляться после завершения программы
-            3) Музыка - описывает файлик с музыкой:
+                - музыка с доп либ должна удаляться после завершения программы +++
+            3) Музыка - описывает файлик с музыкой: +++
                 - есть исполнитель - название - альбом +++
                 - картинка +++
                 - относительный путь (путь общий для всех дир на компе и на телефоне) +++
@@ -176,22 +167,22 @@ if __name__ == '__main__':
                 - хранить в либе +++
                 - всегда должны быть в Main либе +++
                                 
-        Функции:
+        Функции: !!!
             1) Поиск +++
             2) Загрузка: +++
                 - проходится по дире +++
                 - для каждого файла заносить его в диру +++
-            3) Удаление:
-                - дубликатов
-                - файлов что удалились в процессе синхронизации
-            3) Поиск дубликатов:
+            3) Удаление: +++
+                - дубликатов +++
+                - файлов что удалились в процессе синхронизации +++
+            3) Поиск дубликатов: +++
                 - внутренний поиск по Main силами бд +++
-            4) Синхронизация: ???
+            4) Синхронизация: +++
                 - сделать одну "основную либу" = Main +++
-                - при запуске синхронизации сравнивать текущую папку с Main
-                - выводить список различных файлов
-                - удалять отмеченные
+                - при запуске синхронизации сравнивать текущую папку с Main ---
+                - выводить список различных файлов +++
+                - сохранять отмеченные !!!
                 - сделать тоже самое со второй папкой ---
                   сделать это одновременно, показать различия и
-                устранить их сразу после чего сначала обновить Main, а потом дополнительные !!!
+                устранить их сразу после чего сначала обновить Main, а потом дополнительные +++
     '''

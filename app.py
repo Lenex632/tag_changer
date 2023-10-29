@@ -17,24 +17,27 @@ SETTINGS_KEYS = ['SOURCE_DIR', 'ARTIST_DIRS']
 README_FILE = Path(CURRENT_DIR, 'README.md')
 
 
-def make_window() -> Tk:
+def make_window() -> [Tk, ttk.Notebook]:
     window = Tk()
     window.title("Tag Changer")
     window.resizable(False, False)
 
     w = 600
-    h = 300
+    h = 350
     sw = window.winfo_screenwidth()
     sh = window.winfo_screenheight()
     x = (sw - w) // 2
     y = (sh - h) // 2
     window.geometry(f'{w}x{h}+{x}+{y}')
 
+    notebook = ttk.Notebook(window)
+    notebook.pack(expand=True, fill=BOTH)
+
     log.info(f'Making window name="{window.title()}".')
-    return window
+    return window, notebook
 
 
-def make_dir_frame(target: str) -> tuple[Frame, StringVar]:
+def make_dir_frame(target: str, notebook: Frame) -> tuple[Frame, StringVar]:
     match target:
         case 'source_dir':
             text = 'Укажите путь к исходной папке'
@@ -43,7 +46,7 @@ def make_dir_frame(target: str) -> tuple[Frame, StringVar]:
         case _:
             text = ''
 
-    frame = ttk.Frame(borderwidth=1, relief=SOLID, padding=[8, 10])
+    frame = ttk.Frame(notebook, borderwidth=1, relief=SOLID, padding=[8, 10])
 
     label = Label(frame, text=f'{text}')
     label.pack(anchor=NW)
@@ -62,8 +65,8 @@ def make_dir_frame(target: str) -> tuple[Frame, StringVar]:
     return frame, value
 
 
-def make_buttons_frame() -> tuple[Frame, Button, Button, Button]:
-    buttons_frame = ttk.Frame(padding=[8, 10])
+def make_buttons_frame(notebook: Frame) -> tuple[Frame, Button, Button, Button]:
+    buttons_frame = ttk.Frame(notebook, padding=[8, 10])
 
     readme_button = Button(buttons_frame, text='Открыть ReadMe', command=open_readme_file)
     readme_button.pack(anchor=NW)
@@ -216,14 +219,27 @@ def raise_file_settings_error(window: Tk) -> dict | None:
 
 
 def main():
-    window = make_window()
-    sd_frame, sd_value = make_dir_frame('source_dir')
-    ad_frame, ad_value = make_dir_frame('artist_dirs')
-    btn_frame, reset_btn, start_btn, save_btn = make_buttons_frame()
+    window, notebook = make_window()
+
+    tag_changer_manager = ttk.Frame(notebook)
+    duplicate_manager = ttk.Frame(notebook)
+    synchronization_manager = ttk.Frame(notebook)
+
+    sd_frame, sd_value = make_dir_frame('source_dir', tag_changer_manager)
+    ad_frame, ad_value = make_dir_frame('artist_dirs', tag_changer_manager)
+    btn_frame, reset_btn, start_btn, save_btn = make_buttons_frame(tag_changer_manager)
 
     save_btn.bind('<ButtonPress-1>', lambda x: save_settings(sd_value, ad_value))
     reset_btn.bind('<ButtonPress-1>', lambda x: press_reset_button(sd_value=sd_value, ad_value=ad_value))
     start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(sd_value, ad_value, window))
+
+    tag_changer_manager.pack(fill=BOTH, expand=True)
+    duplicate_manager.pack(fill=BOTH, expand=True)
+    synchronization_manager.pack(fill=BOTH, expand=True)
+
+    notebook.add(tag_changer_manager, text="Изменить теги")
+    notebook.add(duplicate_manager, text="Найти дубликаты")
+    notebook.add(synchronization_manager, text="Синхронизация")
 
     settings = parse_settings(window)
     if settings:

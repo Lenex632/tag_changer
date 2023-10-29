@@ -53,42 +53,44 @@ def _load_data_to_db(data: MusicData) -> None:
     log.info(f'{data.artist} - {data.title} added to {data.library}.')
 
 
-def find_duplicates() -> None:
+def find_duplicates() -> list[tuple[str, str, list[str]]] | str | None:
+    data = []
     duplicates = db.find_duplicates(main_lib)
     if not duplicates:
         log.info(f'There are no duplicates in Main library.')
+        return 'Дубликатов нет'
 
     for duplicate in duplicates:
-        for artist, title in duplicate.values():
-            elements = db.find_document(
-                main_lib,
-                {'$and': [{'title': title}, {'artist': artist}, {'library': 'Main'}]},
-                {'file_path': 1, '_id': 0},
-                multiple=True
-            )
+        artist, title = duplicate['name']
+        elements = db.find_document(
+            main_lib,
+            {'$and': [{'title': title}, {'artist': artist}, {'library': 'Main'}]},
+            {'file_path': 1, '_id': 0},
+            multiple=True
+        )
+        file_path = [element['file_path'] for element in elements]
+        data.append((artist, title, file_path))
 
-            print(f'{artist} - {title}')
-            for i in range(len(elements)):
-                print(f'{i + 1}. {elements[i]["file_path"]}')
-
-            _ask_to_delete(elements)
+    return data
 
 
 def synchronization_with_main(*directories: str) -> None:
     unsync_file_path = db.find_different(main_lib, directories)
+
     if not unsync_file_path:
         print('Everything is synchronized')
+
     for file_path in unsync_file_path:
         data = db.find_document(main_lib, file_path, multiple=True)
         print(f'{data[0]["artist"]} - {data[0]["title"]}')
         for i in range(len(data)):
             print(i+1, data[i]['library'], '/', data[i]['file_path'])
         _ask_to_delete(data)
-    db.delete_document(
-        main_lib,
-        {'library': {'$ne': 'Main'}},
-        multiple=True
-    )
+    # db.delete_document(
+    #     main_lib,
+    #     {'library': {'$ne': 'Main'}},
+    #     multiple=True
+    # )
 
 
 def _ask_to_delete(elements: list) -> None:
@@ -134,8 +136,11 @@ def main():
     # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
     # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
     # load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
-    # find_duplicates()
-    synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
+    data = find_duplicates()
+    print(data)
+    # synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
+    # data = db.find_document(main_lib, {'library': 'Main'}, {'_id': 0}, multiple=True)
+    # [print(d) for d in data]
 
 
 if __name__ == '__main__':

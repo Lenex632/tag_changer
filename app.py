@@ -9,6 +9,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 
 from tag_changer import tag_change, delete_images
+from db_controller import synchronization_with_main, load_data_to_db, find_duplicates, ask_to_delete
 from logger import log
 
 CURRENT_DIR = Path(os.path.realpath(__file__)).parent
@@ -23,7 +24,7 @@ def make_window() -> [Tk, ttk.Notebook]:
     window.resizable(False, False)
 
     w = 600
-    h = 350
+    h = 400
     sw = window.winfo_screenwidth()
     sh = window.winfo_screenheight()
     x = (sw - w) // 2
@@ -80,7 +81,7 @@ def make_buttons_frame(notebook: Frame) -> tuple[Frame, Button, Button, Button]:
     save_button = Button(buttons_frame, text='Сохранить настройки')
     save_button.pack(side=RIGHT)
 
-    buttons_frame.pack(anchor=NW, fill=X, pady=10, padx=10)
+    buttons_frame.pack(anchor=NW, side=BOTTOM, fill=X)
 
     log.info('Making frame for buttons.')
     return buttons_frame, reset_button, start_button, save_button
@@ -136,17 +137,13 @@ def open_readme_file() -> None:
     log.info('Opening readme file')
 
 
-def end_tag_changer(window: Tk, error: Exception = None) -> None:
+def show_message(window: Tk, title: str = None, message: str = None, error: Exception = None) -> None:
     if error:
         messagebox.showerror('Что-то пошло не так =(', str(error))
         log.error(error)
         window.destroy()
-    messagebox.showinfo(
-        'Tag Changer завершил работу',
-        'Файлы были изменены. Нажмите "ОК", чтобы выйти'
-    )
-    log.info(f'tag_changer finish')
-    window.destroy()
+    else:
+        messagebox.showinfo(title, message)
 
 
 def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, window: Tk) -> None:
@@ -156,10 +153,11 @@ def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, window: Tk)
     try:
         tag_change(target_dir, target_dir, artist_dirs)
     except Exception as e:
-        end_tag_changer(window, e)
+        show_message(window, error=e)
     print('\n')
     delete_images(target_dir)
-    end_tag_changer(window)
+    show_message(window, 'Tag Changer завершил работу', 'Файлы были изменены.')
+    log.info('tag_changer finish')
 
 
 def parse_settings(window: Tk) -> dict | None:
@@ -218,12 +216,8 @@ def raise_file_settings_error(window: Tk) -> dict | None:
     return settings
 
 
-def main():
-    window, notebook = make_window()
-
+def make_tag_changer_note(window, notebook):
     tag_changer_manager = ttk.Frame(notebook)
-    duplicate_manager = ttk.Frame(notebook)
-    synchronization_manager = ttk.Frame(notebook)
 
     sd_frame, sd_value = make_dir_frame('source_dir', tag_changer_manager)
     ad_frame, ad_value = make_dir_frame('artist_dirs', tag_changer_manager)
@@ -234,16 +228,30 @@ def main():
     start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(sd_value, ad_value, window))
 
     tag_changer_manager.pack(fill=BOTH, expand=True)
-    duplicate_manager.pack(fill=BOTH, expand=True)
-    synchronization_manager.pack(fill=BOTH, expand=True)
-
     notebook.add(tag_changer_manager, text="Изменить теги")
-    notebook.add(duplicate_manager, text="Найти дубликаты")
-    notebook.add(synchronization_manager, text="Синхронизация")
 
     settings = parse_settings(window)
     if settings:
         update_values(settings, sd_value=sd_value, ad_value=ad_value)
+
+
+def make_duplicate_note(window, notebook):
+    duplicate_manager = ttk.Frame(notebook)
+
+    duplicate_manager.pack(fill=BOTH, expand=True)
+    notebook.add(duplicate_manager, text="Найти дубликаты")
+
+
+
+def main():
+    window, notebook = make_window()
+
+    make_tag_changer_note(window, notebook)
+    make_duplicate_note(window, notebook)
+
+    synchronization_manager = ttk.Frame(notebook)
+    synchronization_manager.pack(fill=BOTH, expand=True)
+    notebook.add(synchronization_manager, text="Синхронизация")
 
     window.mainloop()
 

@@ -53,12 +53,12 @@ def _load_data_to_db(data: MusicData) -> None:
     log.info(f'{data.artist} - {data.title} added to {data.library}.')
 
 
-def find_duplicates() -> list[tuple[str, str, list[str]]] | str | None:
+def find_duplicates() -> list[str]:
     data = []
     duplicates = db.find_duplicates(main_lib)
     if not duplicates:
         log.info(f'There are no duplicates in Main library.')
-        return 'Дубликатов нет'
+        return ['Дубликатов нет']
 
     for duplicate in duplicates:
         artist, title = duplicate['name']
@@ -69,7 +69,9 @@ def find_duplicates() -> list[tuple[str, str, list[str]]] | str | None:
             multiple=True
         )
         file_path = [element['file_path'] for element in elements]
-        data.append((artist, title, file_path))
+        data.append(f'{artist} - {title}')
+        for name in file_path:
+            data.append(f'    {name}')
 
     return data
 
@@ -91,6 +93,13 @@ def synchronization_with_main(*directories: str) -> None:
     #     {'library': {'$ne': 'Main'}},
     #     multiple=True
     # )
+
+
+def ask_to_delete(library: str, elements: list[str]) -> None:
+    for e in elements:
+        e = e.strip()
+        db.delete_document(main_lib, {'$and': [{'file_path': e}, {'library': library}]})
+        log.info(f'{library}/{e} was deleted from db.')
 
 
 def _ask_to_delete(elements: list) -> None:
@@ -133,11 +142,12 @@ main_lib = collections['main_lib_collection']
 
 
 def main():
-    # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
+    db.delete_document(main_lib, {}, multiple=True)
+    load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
     # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
     # load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
-    data = find_duplicates()
-    print(data)
+    datas = find_duplicates()
+    # ask_to_delete('Main', datas)
     # synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
     # data = db.find_document(main_lib, {'library': 'Main'}, {'_id': 0}, multiple=True)
     # [print(d) for d in data]

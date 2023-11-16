@@ -38,7 +38,7 @@ def make_window() -> [Tk, ttk.Notebook]:
     return window, notebook
 
 
-def make_dir_frame(target: str, notebook: Frame) -> tuple[Frame, StringVar]:
+def make_dir_frame(target: str, notebook: Frame) -> StringVar:
     match target:
         case 'source_dir':
             text = 'Укажите путь к исходной папке'
@@ -62,11 +62,10 @@ def make_dir_frame(target: str, notebook: Frame) -> tuple[Frame, StringVar]:
 
     frame.pack(anchor=NW, fill=X, padx=10, pady=10)
 
-    log.info(f'Making frame for {target}.')
-    return frame, value
+    return value
 
 
-def make_buttons_frame(notebook: Frame) -> tuple[Frame, Button, Button, Button]:
+def make_buttons_frame(notebook: Frame) -> tuple[Button, Button, Button]:
     buttons_frame = ttk.Frame(notebook, padding=[8, 10])
 
     readme_button = Button(buttons_frame, text='Открыть ReadMe', command=open_readme_file)
@@ -83,8 +82,7 @@ def make_buttons_frame(notebook: Frame) -> tuple[Frame, Button, Button, Button]:
 
     buttons_frame.pack(anchor=NW, side=BOTTOM, fill=X)
 
-    log.info('Making frame for buttons.')
-    return buttons_frame, reset_button, start_button, save_button
+    return reset_button, start_button, save_button
 
 
 def chose_dir(dir_value: StringVar) -> None:
@@ -160,6 +158,19 @@ def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, window: Tk)
     log.info('tag_changer finish')
 
 
+def start_duplicate_finding(window: Tk, duplicates: Variable) -> None:
+    log.info('duplicate_finding start')
+    try:
+        data = find_duplicates()
+        if data:
+            duplicates.set(data)
+        else:
+            duplicates.set(['Дубликатов не найдено'])
+        show_message(window, message='Писк дубликатов завершён.')
+    except Exception as e:
+        show_message(window, error=e)
+
+
 def parse_settings(window: Tk) -> dict | None:
     settings = {}
     try:
@@ -216,12 +227,24 @@ def raise_file_settings_error(window: Tk) -> dict | None:
     return settings
 
 
-def make_tag_changer_note(window, notebook):
+def delete_duplicates(window: Tk, results: Listbox) -> None:
+    duplicates = [results.get(i) for i in results.curselection()]
+    try:
+        ask_to_delete('Main', duplicates)
+        results.delete(0, END)
+        results.insert(0, 'Запустите поиск ещё раз, если хотите проверить,',
+                       'или синхронизируйте вашу основную библиотеку с остальными.')
+        show_message(window, message='Дубликаты были успешно удалены.')
+    except Exception as e:
+        show_message(window, error=e)
+
+
+def make_tag_changer_note(window: Tk, notebook: ttk.Notebook):
     tag_changer_manager = ttk.Frame(notebook)
 
-    sd_frame, sd_value = make_dir_frame('source_dir', tag_changer_manager)
-    ad_frame, ad_value = make_dir_frame('artist_dirs', tag_changer_manager)
-    btn_frame, reset_btn, start_btn, save_btn = make_buttons_frame(tag_changer_manager)
+    sd_value = make_dir_frame('source_dir', tag_changer_manager)
+    ad_value = make_dir_frame('artist_dirs', tag_changer_manager)
+    reset_btn, start_btn, save_btn = make_buttons_frame(tag_changer_manager)
 
     save_btn.bind('<ButtonPress-1>', lambda x: save_settings(sd_value, ad_value))
     reset_btn.bind('<ButtonPress-1>', lambda x: press_reset_button(sd_value=sd_value, ad_value=ad_value))
@@ -235,12 +258,42 @@ def make_tag_changer_note(window, notebook):
         update_values(settings, sd_value=sd_value, ad_value=ad_value)
 
 
-def make_duplicate_note(window, notebook):
+def make_duplicate_note(window: Tk, notebook: ttk.Notebook):
     duplicate_manager = ttk.Frame(notebook)
+
+    duplicates = Variable(value=['Запустите поиск, что бы продолжить.'])
+
+    start_btn = Button(duplicate_manager, text='Запустить поиск   >>')
+    start_btn.pack(anchor=NW, pady=10, padx=10)
+    start_btn.bind('<ButtonPress-1>', lambda x: start_duplicate_finding(window, duplicates))
+
+    label = Label(duplicate_manager, text=f'Результаты поиска:')
+    label.pack(anchor=NW, padx=10)
+
+    results_frame = ttk.Frame(duplicate_manager, borderwidth=1, relief=SOLID, padding=[8, 10], height=1000)
+    results_frame.pack(anchor=NW, fill=X, padx=10, pady=10)
+
+    results = Listbox(results_frame, listvariable=duplicates, selectmode=MULTIPLE)
+    results.pack(anchor=NW, fill=X, side=LEFT, expand=1)
+    scrollbar = ttk.Scrollbar(results_frame, orient="vertical", command=results.yview)
+    scrollbar.pack(anchor=NW, fill=Y, side=RIGHT)
+    results["yscrollcommand"] = scrollbar.set
+
+    label = Label(duplicate_manager, text=f'Выделите файлы, которые хотите удалить и нажмите кнопку "Удалить".')
+    label.pack(anchor=NW, padx=10)
+
+    delete_btn = Button(duplicate_manager, text='Удалить')
+    delete_btn.pack(anchor=NW, side=RIGHT, pady=10, padx=10)
+    delete_btn.bind('<ButtonPress-1>', lambda x: delete_duplicates(window, results))
 
     duplicate_manager.pack(fill=BOTH, expand=True)
     notebook.add(duplicate_manager, text="Найти дубликаты")
 
+
+def make_synchronization_note(window: Tk, notebook: ttk.Notebook):
+    synchronization_manager = ttk.Frame(notebook)
+    synchronization_manager.pack(fill=BOTH, expand=True)
+    notebook.add(synchronization_manager, text="Синхронизация")
 
 
 def main():
@@ -248,10 +301,7 @@ def main():
 
     make_tag_changer_note(window, notebook)
     make_duplicate_note(window, notebook)
-
-    synchronization_manager = ttk.Frame(notebook)
-    synchronization_manager.pack(fill=BOTH, expand=True)
-    notebook.add(synchronization_manager, text="Синхронизация")
+    make_synchronization_note(window, notebook)
 
     window.mainloop()
 

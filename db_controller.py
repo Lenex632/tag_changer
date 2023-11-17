@@ -76,23 +76,19 @@ def find_duplicates() -> list[str]:
     return data
 
 
-def synchronization_with_main(*directories: str) -> None:
+def synchronization_with_main(*directories: str) -> list[str]:
     unsync_file_path = db.find_different(main_lib, directories)
+    datas = []
 
     if not unsync_file_path:
-        print('Everything is synchronized')
+        return ['Everything is synchronized']
 
     for file_path in unsync_file_path:
         data = db.find_document(main_lib, file_path, multiple=True)
-        print(f'{data[0]["artist"]} - {data[0]["title"]}')
+        datas.append(f'{data[0]["artist"]} - {data[0]["title"]}')
         for i in range(len(data)):
-            print(i+1, data[i]['library'], '/', data[i]['file_path'])
-        _ask_to_delete(data)
-    # db.delete_document(
-    #     main_lib,
-    #     {'library': {'$ne': 'Main'}},
-    #     multiple=True
-    # )
+            datas.append(f"    {data[i]['library']}/{data[i]['file_path']}")
+    return datas
 
 
 def ask_to_delete(library: str, elements: list[str]) -> None:
@@ -102,39 +98,8 @@ def ask_to_delete(library: str, elements: list[str]) -> None:
         log.info(f'{library}/{e} was deleted from db.')
 
 
-def _ask_to_delete(elements: list) -> None:
-    success = False
-    while not success:
-        elements_to_delete = input('\nEnter the numbers of elements you want to delete '
-                                   '(in format 1 2 3) or 0 to cancel: ')
-
-        try:
-            elements_to_delete = list(map(int, elements_to_delete.split()))
-        except ValueError:
-            print(f'ValueError. You enter not numbers or not in write format')
-            continue
-
-        if 0 in elements_to_delete:
-            log.info('Canceled\n')
-            break
-
-        for e in elements_to_delete:
-            if e-1 not in range(len(elements)):
-                log.warning(f'Index {e} out of range')
-                break
-        else:
-            success = True
-        if not success:
-            continue
-
-        for e in elements_to_delete:
-            db.delete_document(main_lib, elements[e-1])
-            # TODO удаление не сработает, если элемент в Main либе у которой нет реальных файлов, а только данные из БД.
-            # Path(elements[e-1]['library'], elements[e-1]['file_path']).unlink()
-            log.info(f'{elements[e-1]["file_path"]} was deleted from db')
-        print()
-
-        success = True
+def clean_library(library) -> None:
+    db.delete_document(main_lib, {'library': library}, multiple=True)
 
 
 client, mydb, collections = db.db_connection()
@@ -144,13 +109,13 @@ main_lib = collections['main_lib_collection']
 def main():
     db.delete_document(main_lib, {}, multiple=True)
     load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
-    # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
-    # load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
-    datas = find_duplicates()
+    load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
+    load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
+    # datas = find_duplicates()
     # ask_to_delete('Main', datas)
-    # synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
+    data = synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
     # data = db.find_document(main_lib, {'library': 'Main'}, {'_id': 0}, multiple=True)
-    # [print(d) for d in data]
+    [print(d) for d in data]
 
 
 if __name__ == '__main__':

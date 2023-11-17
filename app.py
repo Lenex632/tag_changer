@@ -3,14 +3,12 @@ import webbrowser
 
 from pathlib import Path
 from tkinter import *
-from tkinter import ttk
-
-from tkinter import messagebox
-from tkinter import filedialog
+from tkinter import messagebox, filedialog, ttk
 
 from tag_changer import tag_change, delete_images
-from db_controller import synchronization_with_main, load_data_to_db, find_duplicates, ask_to_delete
+from db_controller import synchronization_with_main, load_data_to_db, find_duplicates, ask_to_delete, clean_library
 from logger import log
+
 
 CURRENT_DIR = Path(os.path.realpath(__file__)).parent
 SETTINGS_FILE = Path(CURRENT_DIR, 'settings.txt')
@@ -44,6 +42,8 @@ def make_dir_frame(target: str, notebook: Frame) -> StringVar:
             text = 'Укажите путь к исходной папке'
         case 'artist_dirs':
             text = 'Укажите папки с исполнителями для Уровня 2 (через запятую)'
+        case 'sync_dir':
+            text = 'Укажите папку для синхронизации'
         case _:
             text = ''
 
@@ -53,12 +53,16 @@ def make_dir_frame(target: str, notebook: Frame) -> StringVar:
     label.pack(anchor=NW)
 
     value = StringVar(value='...')
-    if target == 'source_dir':
+    if target in ['source_dir', 'sync_dir']:
         btn = Button(frame, text='O', command=lambda v=value: chose_dir(v))
         btn.pack(side=LEFT, pady=3)
 
     entry = Entry(frame, textvariable=value)
-    entry.pack(fill=X, padx=5, pady=3, ipady=4)
+    entry.pack(side=LEFT, fill=X, expand=1, padx=5, pady=3, ipady=4)
+
+    if target == 'sync_dir':
+        add_dir_btn = Button(frame, text='Добавить')
+        add_dir_btn.pack(side=RIGHT, pady=10)
 
     frame.pack(anchor=NW, fill=X, padx=10, pady=10)
 
@@ -83,6 +87,13 @@ def make_buttons_frame(notebook: Frame) -> tuple[Button, Button, Button]:
     buttons_frame.pack(anchor=NW, side=BOTTOM, fill=X)
 
     return reset_button, start_button, save_button
+
+
+def make_checkbox(text: str, notebook: Frame) -> BooleanVar:
+    is_main = BooleanVar()
+    main_checkbox = ttk.Checkbutton(notebook, text=text, variable=is_main)
+    main_checkbox.pack(anchor=NW, padx=10)
+    return is_main
 
 
 def chose_dir(dir_value: StringVar) -> None:
@@ -144,17 +155,20 @@ def show_message(window: Tk, title: str = None, message: str = None, error: Exce
         messagebox.showinfo(title, message)
 
 
-def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, window: Tk) -> None:
+def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, is_main: BooleanVar, window: Tk) -> None:
     log.info('tag_changer start')
     target_dir = Path(target_dir.get())
     artist_dirs = artist_dirs.get().split(',')
     try:
         tag_change(target_dir, target_dir, artist_dirs)
+        if is_main.get():
+            clean_library('Main')
+            load_data_to_db(target_dir, target_dir, True)
+            log.info(f'Datas load to Main.')
+        delete_images(target_dir)
+        show_message(window, 'Tag Changer завершил работу', 'Файлы были изменены.')
     except Exception as e:
         show_message(window, error=e)
-    print('\n')
-    delete_images(target_dir)
-    show_message(window, 'Tag Changer завершил работу', 'Файлы были изменены.')
     log.info('tag_changer finish')
 
 
@@ -244,11 +258,12 @@ def make_tag_changer_note(window: Tk, notebook: ttk.Notebook):
 
     sd_value = make_dir_frame('source_dir', tag_changer_manager)
     ad_value = make_dir_frame('artist_dirs', tag_changer_manager)
+    is_main = make_checkbox('Записать/Перезаписать как Main библиотеку', tag_changer_manager)
     reset_btn, start_btn, save_btn = make_buttons_frame(tag_changer_manager)
 
     save_btn.bind('<ButtonPress-1>', lambda x: save_settings(sd_value, ad_value))
     reset_btn.bind('<ButtonPress-1>', lambda x: press_reset_button(sd_value=sd_value, ad_value=ad_value))
-    start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(sd_value, ad_value, window))
+    start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(sd_value, ad_value, is_main, window))
 
     tag_changer_manager.pack(fill=BOTH, expand=True)
     notebook.add(tag_changer_manager, text="Изменить теги")
@@ -292,6 +307,13 @@ def make_duplicate_note(window: Tk, notebook: ttk.Notebook):
 
 def make_synchronization_note(window: Tk, notebook: ttk.Notebook):
     synchronization_manager = ttk.Frame(notebook)
+
+    label = Label(synchronization_manager, text=f'Перед синхронизацией внимательно прочитайте инструкцию.')
+    label.pack(anchor=NW, padx=10)
+
+    make_dir_frame('sync_dir', synchronization_manager)
+    # add_dir_btn.bind('<ButtonPress-1>', lambda x: delete_duplicates(window, results))
+
     synchronization_manager.pack(fill=BOTH, expand=True)
     notebook.add(synchronization_manager, text="Синхронизация")
 

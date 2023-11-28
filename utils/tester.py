@@ -1,5 +1,5 @@
 import unittest
-from tag_changer import *
+from utils.tag_changer import *
 
 
 class TestMain(unittest.TestCase):

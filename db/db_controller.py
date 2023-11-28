@@ -1,20 +1,11 @@
-from dataclasses import dataclass
-from pathlib import Path
 import eyed3
+from pathlib import Path
 
-from logger import log
-import db_functions as db
-from tag_changer import SOURCE_DIR, TARGET_DIR
+import db.db_functions as db
 
-
-@dataclass
-class MusicData:
-    library: str = None
-    file_path: str = None
-    title: str = None
-    artist: str = None
-    album: str = None
-    image: bool = None
+from utils.logger import log
+from utils.tag_changer import SOURCE_DIR, TARGET_DIR
+from utils.model import MusicData
 
 
 def load_data_to_db(core_dir: Path, target_dir: Path, is_main_lib: bool = True) -> None:
@@ -157,7 +148,7 @@ if __name__ == '__main__':
                 - файлов что удалились в процессе синхронизации +++
             3) Поиск дубликатов: +++
                 - внутренний поиск по Main силами бд +++
-            4) Синхронизация: +++
+            4) Синхронизация: !!!
                 - сделать одну "основную либу" = Main +++
                 - при запуске синхронизации сравнивать текущую папку с Main ---
                 - выводить список различных файлов +++

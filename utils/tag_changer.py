@@ -4,12 +4,13 @@
 #  - сделать что-то с копированием. пока что данная реализация не нужна. по сути нужен запуск скрипта в source, после
 #  чего ручками перекидывать в target. было бы здорово работать сразу в target.
 
-from pathlib import Path
 import re
 import eyed3
-
-from logger import log
 from eyed3.core import AudioFile
+from pathlib import Path
+
+from utils.logger import log
+from utils.model import MusicData
 
 # избавляет от скобок
 PATTERN_TO_NAME = re.compile(r'\s?\((?!(feat|ft|Feat|Ft|OP|EN)(\s|\.|\d+)).*\)$')
@@ -27,7 +28,6 @@ def create_image(file_dir: Path, album: str) -> Path | None:
             image = image.rename(Path(file_dir, album + '.jpg'))
         return image
     else:
-        # TODO пошаманить тут (не очень нравится логика и структура)
         for file_path in file_dir.iterdir():
             song = eyed3.load(file_path)
             try:
@@ -50,21 +50,21 @@ def delete_images(target_dir: Path) -> None:
         image.unlink()
 
 
-def add_tags(song: AudioFile, file_path: Path, title: str, artist: str, album: str, image: Path, level: int) -> None:
-    log.debug(f'{"---" * level}>[{artist}, {title}, {album}]')
+def add_tags(song: AudioFile, song_data: MusicData, level: int) -> None:
+    log.debug(f'{"---" * level}>[{song_data.artist}, {song_data.title}, {song_data.album}]')
     song.initTag()
-    song.tag.remove(file_path)
+    song.tag.remove(song_data.file_path)
 
-    song.tag.title = title
-    song.tag.artist = artist
-    song.tag.album = album
+    song.tag.title = song_data.title
+    song.tag.artist = song_data.artist
+    song.tag.album = song_data.album
 
-    if image:
-        with open(image, "rb") as image:
+    if song_data.image:
+        with open(song_data.image, "rb") as image:
             song.tag.images.set(3, image.read(), "image/jpeg")
 
     song.tag.save()
-    log.info(f'{artist} - {title} successfully save in {album}')
+    log.info(f'{song_data.artist} - {song_data.title} successfully save in {song_data.album}')
 
 
 def prepare_name(file: Path) -> tuple[list[str], str]:
@@ -119,44 +119,40 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
             tag_change(core_dir, file_path, artist_dirs)
 
         elif file_path.is_file() and file.suffix != '.jpg':
-            name, title = prepare_name(file)
+            song_data = MusicData(file_path=file_path)
+            name, song_data.title = prepare_name(file)
             song = eyed3.load(file_path)
-
             # Нужно для песен в исполнителе без альбома (создаётся папка с альбомом) (см. level == 2, ARTIST_DIRS)
-            # TODO не появляется на тестах
-            try:
-                album = song.tag.album
-            except:
-                album = ''
+            song_data.album = '' if song.tag.album is None else song.tag.album
 
             # песни в директориях (как в the best)
             if level == 1:
-                artist = name[0]
-                album = file.parts[0]
-                image = None  # TODO пока что не добавлять картинки в обычные папки. Изменить после доработки БД.
+                song_data.artist = name[0]
+                song_data.album = file.parts[0]
+                song_data.image = None  # TODO пока что не добавлять картинки в обычные папки. Изменить после доработки БД.
 
             # песни в директориях и в альбоме
             elif level == 2:
                 # песни в исполнителе без альбома (создаётся папка с альбомом)
                 if file.parts[0] in artist_dirs:
-                    Path(file_path.parent, album).mkdir(parents=True, exist_ok=True)
-                    new_file_path = file_path.replace(Path(file_path.parent, album, file.name))
-                    artist = file.parts[1]
-                    image = create_image(new_file_path.parent, album)
-                    add_tags(eyed3.load(new_file_path), new_file_path, title, artist, album, image, level)
+                    Path(file_path.parent, song_data.album).mkdir(parents=True, exist_ok=True)
+                    song_data.file_path = file_path.replace(Path(file_path.parent, song_data.album, file.name))
+                    song_data.artist = file.parts[1]
+                    song_data.image = create_image(song_data.file_path.parent, song_data.album)
+                    add_tags(eyed3.load(song_data.file_path), song_data, level)
                     continue
-                artist = name[0]
-                album = file.parts[1]
-                image = create_image(file_path.parent, album)
+                song_data.artist = name[0]
+                song_data.album = file.parts[1]
+                song_data.image = create_image(file_path.parent, song_data.album)
 
             # песни в исполнителях в альбомах (level == 3)
             else:
-                artist = file.parts[1]
-                album = file.parts[2]
-                image = create_image(file_path.parent, album)
+                song_data.artist = file.parts[1]
+                song_data.album = file.parts[2]
+                song_data.image = create_image(file_path.parent, song_data.album)
 
-            title, artist = change_feat(title, artist)
-            add_tags(song, file_path, title, artist, album, image, level)
+            song_data.title, song_data.artist = change_feat(song_data.title, song_data.artist)
+            add_tags(song, song_data, level)
 
 
 ARTIST_DIRS = ['Legend', 'Легенды']
@@ -164,8 +160,8 @@ ARTIST_DIRS = ['Legend', 'Легенды']
 SOURCE_DIR = Path('C:\\Users\\IvanK\\Music\\Music')
 TARGET_DIR = Path('C:\\Users\\IvanK\\Music\\target_dir')
 # Linux
-SOURCE_DIR = Path('/home/lenex/code/tag_changeer/source_dir')
-TARGET_DIR = Path('/home/lenex/code/tag_changeer/target_dir')
+SOURCE_DIR = Path('../source_dir')
+TARGET_DIR = Path('../target_dir')
 '''
 settings.txt
 

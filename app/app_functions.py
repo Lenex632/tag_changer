@@ -1,0 +1,173 @@
+import os
+import webbrowser
+
+from pathlib import Path
+from tkinter import *
+from tkinter import messagebox, filedialog
+
+from utils.logger import log
+from utils.tag_changer import tag_change, delete_images
+from db.db_controller import load_data_to_db, find_duplicates, ask_to_delete, clean_library
+
+
+CURRENT_DIR = Path(os.path.realpath(__file__)).parent
+README_FILE = Path(CURRENT_DIR, '../README.md')
+SETTINGS_FILE = Path(CURRENT_DIR, '../settings.txt')
+SETTINGS_KEYS = ['SOURCE_DIR', 'ARTIST_DIRS']
+
+
+def show_message(window: Tk, title: str = None, message: str = None, error: Exception = None) -> None:
+    if error:
+        messagebox.showerror('Что-то пошло не так =(', str(error))
+        log.error(error)
+        window.destroy()
+    else:
+        messagebox.showinfo(title, message)
+
+
+def chose_dir(dir_value: StringVar) -> None:
+    star_value = dir_value.get()
+    new_value = filedialog.askdirectory()
+    if new_value:
+        dir_value.set(new_value)
+    else:
+        dir_value.set(star_value)
+
+    log.info(f'Was chosen directory: {dir_value.get()}')
+
+
+def open_readme_file() -> None:
+    webbrowser.open(str(README_FILE))
+    log.info('Opening readme file')
+
+
+def save_settings(sd_value: StringVar, ad_value: StringVar) -> None:
+    sd_value = sd_value.get() if sd_value.get() != '...' else ''
+    ad_value = ad_value.get() if ad_value.get() != '...' else ''
+    settings = dict(zip(SETTINGS_KEYS, (sd_value, ad_value)))
+
+    with open(file=SETTINGS_FILE, mode='w') as file:
+        for key, value in settings.items():
+            file.write(f'{key}={value}\n')
+
+    log.info('Settings have been saved')
+
+
+def reset_settings() -> dict:
+    settings = {}
+    with open(file=SETTINGS_FILE, mode='w') as file:
+        for key in SETTINGS_KEYS:
+            file.write(f'{key}=\n')
+            settings[key] = ''
+
+    log.info('Settings have been reset')
+    return settings
+
+
+def update_values(settings: dict, **kwargs) -> None:
+    kwargs['sd_value'].set(settings['SOURCE_DIR'] if settings['SOURCE_DIR'] else '...')
+    kwargs['ad_value'].set(', '.join(settings['ARTIST_DIRS']) if settings['ARTIST_DIRS'] else '...')
+    log.info('Values have been updated')
+
+
+def press_reset_button(**kwargs) -> None:
+    settings = reset_settings()
+    update_values(settings, **kwargs)
+
+
+def start_tag_changer(target_dir: StringVar, artist_dirs: StringVar, is_main: BooleanVar, window: Tk) -> None:
+    log.info('tag_changer start')
+    target_dir = Path(target_dir.get())
+    artist_dirs = artist_dirs.get().split(',')
+    try:
+        tag_change(target_dir, target_dir, artist_dirs)
+        if is_main.get():
+            clean_library('Main')
+            load_data_to_db(target_dir, target_dir, True)
+            log.info(f'Datas load to Main.')
+        delete_images(target_dir)
+        show_message(window, 'Tag Changer завершил работу', 'Файлы были изменены.')
+    except Exception as e:
+        show_message(window, error=e)
+    log.info('tag_changer finish')
+
+
+def start_duplicate_finding(window: Tk, duplicates: Variable) -> None:
+    log.info('duplicate_finding start')
+    try:
+        data = find_duplicates()
+        if data:
+            duplicates.set(data)
+        else:
+            duplicates.set(['Дубликатов не найдено'])
+        show_message(window, message='Писк дубликатов завершён.')
+    except Exception as e:
+        show_message(window, error=e)
+
+
+def parse_settings(window: Tk) -> dict | None:
+    settings = {}
+    try:
+        with open(file=SETTINGS_FILE, mode='r') as file:
+            for line in file:
+                try:
+                    key, value = line.split('=')
+                    settings[key] = value.strip()
+                except ValueError:
+                    settings = raise_file_settings_error(window)
+                    break
+    except FileNotFoundError:
+        settings = reset_settings()
+
+    if settings is None:
+        return None
+
+    for key in SETTINGS_KEYS:
+        if key not in settings:
+            raise_file_settings_error(window)
+            break
+        else:
+            if key == 'ARTIST_DIRS':
+                try:
+                    if settings[key]:
+                        settings[key] = list(map(lambda x: x.strip(), settings[key].split(',')))
+                except ValueError:
+                    settings = raise_file_settings_error(window)
+                    break
+
+    log.info(f'Finish parsing settings: {settings=}')
+    return settings
+
+
+def raise_file_settings_error(window: Tk) -> dict | None:
+    log.info(f'Start settings file error')
+    messagebox.showerror(
+        'Ошибка',
+        'Ваш файл настроек повреждён. Пожалуйста, исправьте файл или сбросьте настройки.'
+    )
+    answer = messagebox.askyesno(
+        'Сброс настроек',
+        'Установить настройки по умолчанию?\n (в случае отказа программа прекратит работу)'
+    )
+
+    if answer:
+        settings = reset_settings()
+    else:
+        log.error('Wrong settings file.')
+        window.destroy()
+        settings = None
+
+    log.info(f'End settings file error')
+    return settings
+
+
+def delete_duplicates(window: Tk, results: Listbox) -> None:
+    duplicates = [results.get(i) for i in results.curselection()]
+    try:
+        ask_to_delete('Main', duplicates)
+        results.delete(0, END)
+        results.insert(0, 'Запустите поиск ещё раз, если хотите проверить,',
+                       'или синхронизируйте вашу основную библиотеку с остальными.')
+        show_message(window, message='Дубликаты были успешно удалены.')
+    except Exception as e:
+        show_message(window, error=e)

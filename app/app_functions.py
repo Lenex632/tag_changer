@@ -7,13 +7,13 @@ from tkinter import messagebox, filedialog
 
 from utils.logger import log
 from utils.tag_changer import tag_change, delete_images
-from db.db_controller import load_data_to_db, find_duplicates, ask_to_delete, clean_library
+from db.db_controller import load_data_to_db, find_duplicates, ask_to_delete, clean_library, synchronization_with_main
 
 
 CURRENT_DIR = Path(os.path.realpath(__file__)).parent
 README_FILE = Path(CURRENT_DIR, '../README.md')
 SETTINGS_FILE = Path(CURRENT_DIR, '../settings.txt')
-SETTINGS_KEYS = ['SOURCE_DIR', 'ARTIST_DIRS']
+SETTINGS_KEYS = ['SOURCE_DIR', 'ARTIST_DIRS', 'SYNC_DIRS']
 
 
 def show_message(window: Tk, title: str = None, message: str = None, error: Exception = None) -> None:
@@ -41,16 +41,20 @@ def open_readme_file() -> None:
     log.info('Opening readme file')
 
 
-def save_settings(sd_value: StringVar, ad_value: StringVar) -> None:
-    sd_value = sd_value.get() if sd_value.get() != '...' else ''
-    ad_value = ad_value.get() if ad_value.get() != '...' else ''
-    settings = dict(zip(SETTINGS_KEYS, (sd_value, ad_value)))
+def save_settings(window: Tk, **kwargs) -> None:
+    settings = parse_settings(window)
+    for key in settings:
+        if key.lower() in kwargs:
+            value = kwargs[key.lower()].get()
+            settings[key] = value if value != '...' else ''
+        if type(settings[key]) == list or type(settings[key]) == tuple:
+            settings[key] = ', '.join(settings[key])
 
     with open(file=SETTINGS_FILE, mode='w') as file:
         for key, value in settings.items():
             file.write(f'{key}={value}\n')
 
-    log.info('Settings have been saved')
+    log.info(f'Settings have been saved: {settings=}')
 
 
 def reset_settings() -> dict:
@@ -65,9 +69,47 @@ def reset_settings() -> dict:
 
 
 def update_values(settings: dict, **kwargs) -> None:
-    kwargs['sd_value'].set(settings['SOURCE_DIR'] if settings['SOURCE_DIR'] else '...')
-    kwargs['ad_value'].set(', '.join(settings['ARTIST_DIRS']) if settings['ARTIST_DIRS'] else '...')
+    for key, value in kwargs.items():
+        key = key.upper()
+        if key in ['ARTIST_DIRS', 'SYNC_DIR']:
+            value.set(', '.join(settings[key]) if settings[key] else '...')
+        else:
+            value.set(settings[key] if settings[key] else '...')
     log.info('Values have been updated')
+
+
+def parse_settings(window: Tk) -> dict:
+    settings = {}
+    try:
+        with open(file=SETTINGS_FILE, mode='r') as file:
+            for line in file:
+                try:
+                    key, value = line.split('=')
+                    settings[key] = value.strip()
+                except ValueError:
+                    settings = raise_file_settings_error(window)
+                    break
+    except FileNotFoundError:
+        settings = reset_settings()
+
+    if settings is None:
+        return {}
+
+    for key in SETTINGS_KEYS:
+        if key not in settings:
+            raise_file_settings_error(window)
+            break
+        else:
+            if key in ['ARTIST_DIRS', 'SYNC_DIRS']:
+                try:
+                    if settings[key]:
+                        settings[key] = list(map(lambda x: x.strip(), settings[key].split(',')))
+                except ValueError:
+                    settings = raise_file_settings_error(window)
+                    break
+
+    log.info(f'Finish parsing settings: {settings=}')
+    return settings
 
 
 def press_reset_button(**kwargs) -> None:
@@ -105,40 +147,6 @@ def start_duplicate_finding(window: Tk, duplicates: Variable) -> None:
         show_message(window, error=e)
 
 
-def parse_settings(window: Tk) -> dict | None:
-    settings = {}
-    try:
-        with open(file=SETTINGS_FILE, mode='r') as file:
-            for line in file:
-                try:
-                    key, value = line.split('=')
-                    settings[key] = value.strip()
-                except ValueError:
-                    settings = raise_file_settings_error(window)
-                    break
-    except FileNotFoundError:
-        settings = reset_settings()
-
-    if settings is None:
-        return None
-
-    for key in SETTINGS_KEYS:
-        if key not in settings:
-            raise_file_settings_error(window)
-            break
-        else:
-            if key == 'ARTIST_DIRS':
-                try:
-                    if settings[key]:
-                        settings[key] = list(map(lambda x: x.strip(), settings[key].split(',')))
-                except ValueError:
-                    settings = raise_file_settings_error(window)
-                    break
-
-    log.info(f'Finish parsing settings: {settings=}')
-    return settings
-
-
 def raise_file_settings_error(window: Tk) -> dict | None:
     log.info(f'Start settings file error')
     messagebox.showerror(
@@ -171,3 +179,22 @@ def delete_duplicates(window: Tk, results: Listbox) -> None:
         show_message(window, message='Дубликаты были успешно удалены.')
     except Exception as e:
         show_message(window, error=e)
+
+
+def add_dir_to_list(sync_list: Variable, dir_to_add: StringVar):
+    dir_to_add = dir_to_add.get()
+    log.info(f'add dir "{dir_to_add}" to sync list')
+    data = sync_list.get()
+    if data == ('...',):
+        data = []
+    data = list(set([*data] + [dir_to_add]))
+    sync_list.set(data)
+
+
+def synchronization(window: Tk, results: Listbox):
+    clean_library({'$ne': 'Main'})
+    directories = [results.get(i) for i in results.curselection()]
+    for directory in directories:
+        load_data_to_db(Path(directory), Path(directory), False)
+    data = synchronization_with_main(*directories)
+    [print(d) for d in data]

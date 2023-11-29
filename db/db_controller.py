@@ -89,7 +89,7 @@ def ask_to_delete(library: str, elements: list[str]) -> None:
         log.info(f'{library}/{e} was deleted from db.')
 
 
-def clean_library(library) -> None:
+def clean_library(library: str | dict) -> None:
     db.delete_document(main_lib, {'library': library}, multiple=True)
 
 

@@ -72,7 +72,7 @@ def synchronization_with_main(*directories: str) -> list[str]:
     datas = []
 
     if not unsync_file_path:
-        return ['Everything is synchronized']
+        return ['Всё синхронизировано. Пожалуйста закройте окно.']
 
     for file_path in unsync_file_path:
         data = db.find_document(main_lib, file_path, multiple=True)

@@ -191,10 +191,29 @@ def add_dir_to_list(sync_list: Variable, dir_to_add: StringVar):
     sync_list.set(data)
 
 
-def synchronization(window: Tk, results: Listbox):
+def chose_all_in_list(sync_list: Listbox, variable: BooleanVar):
+    size = sync_list.size()
+    if not variable.get():
+        sync_list.select_set(0, size)
+    else:
+        sync_list.select_clear(0, size)
+
+
+def sync_search(results: Listbox) -> list[str]:
     clean_library({'$ne': 'Main'})
     directories = [results.get(i) for i in results.curselection()]
     for directory in directories:
         load_data_to_db(Path(directory), Path(directory), False)
     data = synchronization_with_main(*directories)
-    [print(d) for d in data]
+
+    return data
+
+
+def delete_sync(results: Listbox):
+    res = [results.get(i).strip() for i in results.curselection()]
+    print(res)
+
+
+def add_sync(results: Listbox):
+    res = [results.get(i).strip() for i in results.curselection()]
+    print(res)

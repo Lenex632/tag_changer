@@ -4,7 +4,7 @@ from tkinter import ttk
 from utils.logger import log
 from app.app_functions import (chose_dir, open_readme_file, save_settings, press_reset_button, start_tag_changer,
                                parse_settings, update_values, start_duplicate_finding, delete_duplicates,
-                               add_dir_to_list, synchronization)
+                               add_dir_to_list, sync_search, chose_all_in_list, delete_sync, add_sync)
 
 
 def make_window() -> [Tk, ttk.Notebook]:
@@ -78,22 +78,35 @@ def make_buttons_frame(frame: Frame) -> tuple[Button, Button, Button]:
     return reset_button, start_button, save_button
 
 
-def make_checkbox(text: str, frame: Frame) -> BooleanVar:
-    is_main = BooleanVar()
-    main_checkbox = ttk.Checkbutton(frame, text=text, variable=is_main)
-    main_checkbox.pack(anchor=NW, padx=10)
+def make_checkbox(text: str, frame: Frame) -> [BooleanVar, Checkbutton]:
+    variable = BooleanVar()
+    checkbox_btn = ttk.Checkbutton(frame, text=text, variable=variable)
+    checkbox_btn.pack(anchor=NW, padx=10)
 
-    return is_main
+    return variable, checkbox_btn
 
 
-def make_tag_changer_note(window: Tk, notebook: ttk.Notebook):
+def make_results(frame: ttk.Frame, variable: Variable) -> Listbox:
+    results_frame = ttk.Frame(frame, borderwidth=1, relief=SOLID, padding=[8, 10])
+    results_frame.pack(anchor=NW, fill=X, padx=10, pady=10)
+
+    results = Listbox(results_frame, listvariable=variable, selectmode=MULTIPLE)
+    results.pack(anchor=NW, fill=X, side=LEFT, expand=1)
+    scrollbar = ttk.Scrollbar(results_frame, orient="vertical", command=results.yview)
+    scrollbar.pack(anchor=NW, fill=Y, side=RIGHT)
+    results["yscrollcommand"] = scrollbar.set
+
+    return results
+
+
+def make_tag_changer_note(window: Tk, notebook: ttk.Notebook) -> None:
     tag_changer_manager = ttk.Frame(notebook)
     tag_changer_manager.pack(fill=BOTH, expand=True)
     notebook.add(tag_changer_manager, text="Изменить теги")
 
     source_dir = make_dir_frame('source_dir', tag_changer_manager)
     artist_dirs = make_dir_frame('artist_dirs', tag_changer_manager)
-    is_main = make_checkbox('Записать/Перезаписать как Main библиотеку', tag_changer_manager)
+    is_main, is_main_btn = make_checkbox('Записать/Перезаписать как Main библиотеку', tag_changer_manager)
     reset_btn, start_btn, save_btn = make_buttons_frame(tag_changer_manager)
 
     settings = parse_settings(window)
@@ -105,7 +118,7 @@ def make_tag_changer_note(window: Tk, notebook: ttk.Notebook):
     start_btn.bind('<ButtonPress-1>', lambda x: start_tag_changer(source_dir, artist_dirs, is_main, window))
 
 
-def make_duplicate_note(window: Tk, notebook: ttk.Notebook):
+def make_duplicate_note(window: Tk, notebook: ttk.Notebook) -> None:
     duplicate_manager = ttk.Frame(notebook)
     duplicate_manager.pack(fill=BOTH, expand=True)
     notebook.add(duplicate_manager, text="Найти дубликаты")
@@ -128,20 +141,7 @@ def make_duplicate_note(window: Tk, notebook: ttk.Notebook):
     delete_btn.bind('<ButtonPress-1>', lambda x: delete_duplicates(window, results))
 
 
-def make_results(frame: ttk.Frame, variable: Variable):
-    results_frame = ttk.Frame(frame, borderwidth=1, relief=SOLID, padding=[8, 10], height=1000)
-    results_frame.pack(anchor=NW, fill=X, padx=10, pady=10)
-
-    results = Listbox(results_frame, listvariable=variable, selectmode=MULTIPLE)
-    results.pack(anchor=NW, fill=X, side=LEFT, expand=1)
-    scrollbar = ttk.Scrollbar(results_frame, orient="vertical", command=results.yview)
-    scrollbar.pack(anchor=NW, fill=Y, side=RIGHT)
-    results["yscrollcommand"] = scrollbar.set
-
-    return results
-
-
-def make_synchronization_note(window: Tk, notebook: ttk.Notebook):
+def make_synchronization_note(window: Tk, notebook: ttk.Notebook) -> None:
     synchronization_manager = ttk.Frame(notebook)
     synchronization_manager.pack(fill=BOTH, expand=True)
     notebook.add(synchronization_manager, text="Синхронизация")
@@ -150,13 +150,43 @@ def make_synchronization_note(window: Tk, notebook: ttk.Notebook):
     reset_btn, start_btn, save_btn = make_buttons_frame(synchronization_manager)
 
     sync_dirs = Variable()
+    chose_all, chose_all_btn = make_checkbox('Выбрать все', synchronization_manager)
     results = make_results(synchronization_manager, sync_dirs)
 
     settings = parse_settings(window)
     if settings:
         update_values(settings, sync_dirs=sync_dirs)
 
+    chose_all_btn.bind('<ButtonPress-1>', lambda x: chose_all_in_list(results, chose_all))
     add_btn.bind('<ButtonPress-1>', lambda x: add_dir_to_list(sync_dirs, dir_to_add))
     save_btn.bind('<ButtonPress-1>', lambda x: save_settings(window, sync_dirs=sync_dirs))
     reset_btn.bind('<ButtonPress-1>', lambda x: press_reset_button(sync_dirs=sync_dirs))
-    start_btn.bind('<ButtonPress-1>', lambda x: synchronization(window, results))
+    start_btn.bind('<ButtonPress-1>', lambda x: make_sync_window(sync_search(results)))
+
+
+def make_sync_window(data: list[str]):
+    sync_window = Toplevel()
+    sync_window.resizable(False, False)
+    sync_window.geometry('700x400')
+    sync_window.title("Synchronization")
+
+    sync_frame = ttk.Frame(sync_window)
+    sync_frame.pack(fill=BOTH, expand=True, pady=10)
+
+    label = Label(sync_frame, text=f'Результаты поиска:')
+    label.pack(anchor=NW, padx=10)
+
+    sync_data = Variable(value=data)
+    results = make_results(sync_frame, sync_data)
+
+    label = Label(sync_frame, text=f'Выделите файлы и нажмите кнопку "Удалить", чтобы удалить их с диска и/или из базы'
+                                   f'\nданных, ИЛИ кнопку "Синхронизировать", чтобы добавить их в базу и/или в ваши '
+                                   f'другие\nхранилища.', justify=LEFT)
+    label.pack(anchor=NW, padx=10)
+
+    delete_btn = Button(sync_frame, text='Удалить')
+    delete_btn.pack(anchor=SW, side=RIGHT, padx=10)
+    delete_btn.bind('<ButtonPress-1>', lambda x: delete_sync(results))
+    delete_btn = Button(sync_frame, text='Синхронизировать')
+    delete_btn.pack(anchor=SW, side=RIGHT)
+    delete_btn.bind('<ButtonPress-1>', lambda x: add_sync(results))

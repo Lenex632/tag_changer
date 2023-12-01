@@ -32,7 +32,9 @@ def create_image(file_dir: Path, album: str) -> Path | None:
             song = eyed3.load(file_path)
             try:
                 image = song.tag.images[0].image_data
-            except IndexError or AttributeError:
+            except IndexError:
+                image = None
+            except AttributeError:
                 image = None
             if image:
                 with open(Path(file_dir, album + '.jpg'), 'wb+') as album_cover:
@@ -122,8 +124,12 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
             song_data = MusicData(file_path=file_path)
             name, song_data.title = prepare_name(file)
             song = eyed3.load(file_path)
+
             # Нужно для песен в исполнителе без альбома (создаётся папка с альбомом) (см. level == 2, ARTIST_DIRS)
-            song_data.album = '' if song.tag.album is None else song.tag.album
+            try:
+                song_data.album = song.tag.album
+            except AttributeError:
+                song_data.album = ''
 
             # песни в директориях (как в the best)
             if level == 1:

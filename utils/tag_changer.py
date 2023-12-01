@@ -32,7 +32,7 @@ def create_image(file_dir: Path, album: str) -> Path | None:
             song = eyed3.load(file_path)
             try:
                 image = song.tag.images[0].image_data
-            except IndexError:
+            except IndexError or AttributeError:
                 image = None
             if image:
                 with open(Path(file_dir, album + '.jpg'), 'wb+') as album_cover:

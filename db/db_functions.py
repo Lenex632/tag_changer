@@ -1,4 +1,5 @@
 from typing import Any, Mapping
+from pathlib import Path
 
 from pymongo import *
 from pymongo.collection import Collection
@@ -66,7 +67,7 @@ def find_duplicates(collection: Collection) -> list:
 def find_different(collection: Collection, libraries: tuple[str]) -> list:
     count = len(libraries) + 1
     data = [{'library': 'Main'}]
-    [data.append({'library': lib}) for lib in libraries]
+    [data.append({'library': Path(lib).__str__()}) for lib in libraries]
 
     return list(collection.aggregate([
             {'$match': {'$or': data}},

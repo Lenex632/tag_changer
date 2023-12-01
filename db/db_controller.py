@@ -1,6 +1,6 @@
 import eyed3
 from pathlib import Path
-from shutil import copy
+from shutil import copy, SameFileError
 
 import db.db_functions as db
 
@@ -96,7 +96,11 @@ def clean_library(library: str | dict) -> None:
 
 def to_sync(library: str, element: str, libs: list[str]) -> None:
     for lib in libs:
-        copy(Path(library, element), Path(lib, element))
+        try:
+            copy(Path(library, element), Path(lib, element))
+        except SameFileError:
+            Path(lib, element).unlink()
+            copy(Path(library, element), Path(lib, element))
         data = MusicData(
             **db.find_document(
                 main_lib,
@@ -105,7 +109,8 @@ def to_sync(library: str, element: str, libs: list[str]) -> None:
             )
         )
         data.library = 'Main'
-        _load_data_to_db(data)
+        if db.find_document(main_lib, data.__dict__) is None:
+            _load_data_to_db(data)
         log.info(f'{library}/{element} was coped to {lib}/{element}.')
 
 

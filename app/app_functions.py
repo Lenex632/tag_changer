@@ -215,6 +215,7 @@ def delete_sync(results: Listbox):
     results = [results.get(i).strip().split(' --> ') for i in results.curselection()]
     for library, element in results:
         to_delete(library, element)
+        to_delete('Main', element)
 
 
 def add_sync(results: Listbox, libraries: list[str]):

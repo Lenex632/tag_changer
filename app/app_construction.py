@@ -161,10 +161,10 @@ def make_synchronization_note(window: Tk, notebook: ttk.Notebook) -> None:
     add_btn.bind('<ButtonPress-1>', lambda x: add_dir_to_list(sync_dirs, dir_to_add))
     save_btn.bind('<ButtonPress-1>', lambda x: save_settings(window, sync_dirs=sync_dirs))
     reset_btn.bind('<ButtonPress-1>', lambda x: press_reset_button(sync_dirs=sync_dirs))
-    start_btn.bind('<ButtonPress-1>', lambda x: make_sync_window(sync_search(results)))
+    start_btn.bind('<ButtonPress-1>', lambda x: make_sync_window(*sync_search(results)))
 
 
-def make_sync_window(data: list[str]):
+def make_sync_window(data: list[str], libraries: list[str]) -> None:
     sync_window = Toplevel()
     sync_window.resizable(False, False)
     sync_window.geometry('700x400')
@@ -187,6 +187,7 @@ def make_sync_window(data: list[str]):
     delete_btn = Button(sync_frame, text='Удалить')
     delete_btn.pack(anchor=SW, side=RIGHT, padx=10)
     delete_btn.bind('<ButtonPress-1>', lambda x: delete_sync(results))
+
     delete_btn = Button(sync_frame, text='Синхронизировать')
     delete_btn.pack(anchor=SW, side=RIGHT)
-    delete_btn.bind('<ButtonPress-1>', lambda x: add_sync(results))
+    delete_btn.bind('<ButtonPress-1>', lambda x: add_sync(results, libraries))

@@ -1,5 +1,6 @@
 import eyed3
 from pathlib import Path
+from shutil import copy
 
 import db.db_functions as db
 
@@ -78,19 +79,34 @@ def synchronization_with_main(*directories: str) -> list[str]:
         data = db.find_document(main_lib, file_path, multiple=True)
         datas.append(f'{data[0]["artist"]} - {data[0]["title"]}')
         for i in range(len(data)):
-            datas.append(f"    {data[i]['library']}/{data[i]['file_path']}")
+            datas.append(f"    {data[i]['library']} --> {data[i]['file_path']}")
     return datas
 
 
-def ask_to_delete(library: str, elements: list[str]) -> None:
-    for e in elements:
-        e = e.strip()
-        db.delete_document(main_lib, {'$and': [{'file_path': e}, {'library': library}]})
-        log.info(f'{library}/{e} was deleted from db.')
+def to_delete(library: str, element: str) -> None:
+    db.delete_document(main_lib, {'$and': [{'file_path': element}, {'library': library}]})
+    if library != 'Main':
+        Path(library, element).unlink()
+    log.info(f'{library}/{element} was deleted from db{" and from disk" if library != "Main" else ""}.')
 
 
 def clean_library(library: str | dict) -> None:
     db.delete_document(main_lib, {'library': library}, multiple=True)
+
+
+def to_sync(library: str, element: str, libs: list[str]) -> None:
+    for lib in libs:
+        copy(Path(library, element), Path(lib, element))
+        data = MusicData(
+            **db.find_document(
+                main_lib,
+                {'$and': [{'library': library}, {'file_path': element}]},
+                {'_id': 0}
+            )
+        )
+        data.library = 'Main'
+        _load_data_to_db(data)
+        log.info(f'{library}/{element} was coped to {lib}/{element}.')
 
 
 client, mydb, collections = db.db_connection()
@@ -98,15 +114,18 @@ main_lib = collections['main_lib_collection']
 
 
 def main():
-    db.delete_document(main_lib, {}, multiple=True)
-    load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
-    load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
-    load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
+    # db.delete_document(main_lib, {}, multiple=True)
+    # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=True)
+    # load_data_to_db(SOURCE_DIR, SOURCE_DIR, is_main_lib=False)
+    # load_data_to_db(TARGET_DIR, TARGET_DIR, is_main_lib=False)
     # datas = find_duplicates()
     # ask_to_delete('Main', datas)
-    data = synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
+    # data = synchronization_with_main(str(TARGET_DIR), str(SOURCE_DIR))
     # data = db.find_document(main_lib, {'library': 'Main'}, {'_id': 0}, multiple=True)
-    [print(d) for d in data]
+    # [print(d) for d in data]
+    to_sync('/home/lenex/code/tag_changeer/target_dir',
+            'The Best/Taio Cruz, Some Artis, Some2 - Dynamite (feat. Some1).mp3',
+            ['/home/lenex/code/tag_changeer/source_dir'])
 
 
 if __name__ == '__main__':

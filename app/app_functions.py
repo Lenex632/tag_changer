@@ -7,7 +7,8 @@ from tkinter import messagebox, filedialog
 
 from utils.logger import log
 from utils.tag_changer import tag_change, delete_images
-from db.db_controller import load_data_to_db, find_duplicates, ask_to_delete, clean_library, synchronization_with_main
+from db.db_controller import (load_data_to_db, find_duplicates, to_delete, clean_library, synchronization_with_main,
+                              to_sync)
 
 
 CURRENT_DIR = Path(os.path.realpath(__file__)).parent
@@ -170,9 +171,10 @@ def raise_file_settings_error(window: Tk) -> dict | None:
 
 
 def delete_duplicates(window: Tk, results: Listbox) -> None:
-    duplicates = [results.get(i) for i in results.curselection()]
+    duplicates = [results.get(i).strip() for i in results.curselection()]
     try:
-        ask_to_delete('Main', duplicates)
+        for d in duplicates:
+            to_delete('Main', d)
         results.delete(0, END)
         results.insert(0, 'Запустите поиск ещё раз, если хотите проверить,',
                        'или синхронизируйте вашу основную библиотеку с остальными.')
@@ -199,21 +201,27 @@ def chose_all_in_list(sync_list: Listbox, variable: BooleanVar):
         sync_list.select_clear(0, size)
 
 
-def sync_search(results: Listbox) -> list[str]:
+def sync_search(results: Listbox) -> [list[str], list[str]]:
     clean_library({'$ne': 'Main'})
     directories = [results.get(i) for i in results.curselection()]
     for directory in directories:
         load_data_to_db(Path(directory), Path(directory), False)
     data = synchronization_with_main(*directories)
 
-    return data
+    return data, directories
 
 
 def delete_sync(results: Listbox):
-    res = [results.get(i).strip() for i in results.curselection()]
-    print(res)
+    results = [results.get(i).strip().split(' --> ') for i in results.curselection()]
+    for library, element in results:
+        to_delete(library, element)
 
 
-def add_sync(results: Listbox):
-    res = [results.get(i).strip() for i in results.curselection()]
-    print(res)
+def add_sync(results: Listbox, libraries: list[str]):
+    results = [results.get(i).strip().split(' --> ') for i in results.curselection()]
+    for library, element in results:
+        if library == 'Main':
+            log.warning(f"Can't find object ({library}/{element}) that exist only in db.")
+            continue
+        libs = list(filter(lambda x: x != library, libraries))
+        to_sync(library, element, libs)

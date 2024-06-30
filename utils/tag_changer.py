@@ -147,7 +147,10 @@ def tag_change(core_dir: Path, target_dir: Path, artist_dirs: list[str]) -> None
                     song_data.image = create_image(song_data.file_path.parent, song_data.album)
                     add_tags(eyed3.load(song_data.file_path), song_data, level)
                     continue
-                song_data.artist = name[0]
+                try:
+                    song_data.artist = song.tag.artist
+                except AttributeError:
+                    song_data.artist = name[0]  # TODO затычка, посмотри git blame
                 song_data.album = file.parts[1]
                 song_data.image = create_image(file_path.parent, song_data.album)
 
@@ -176,6 +179,7 @@ ARTIST_DIRS=Legend, Легенды
 '''
 
 if __name__ == '__main__':
-    tag_change(TARGET_DIR, TARGET_DIR, ARTIST_DIRS)
-    print('\n')
-    delete_images(TARGET_DIR)
+    # tag_change(TARGET_DIR, TARGET_DIR, ARTIST_DIRS)
+    # print('\n')
+    # delete_images(TARGET_DIR)
+    create_image(Path('/home/lenex/Music/target_dir/Nirvana/Cyberpunk 2077'), 'Cyberpunk 2077')

@@ -9,6 +9,12 @@ from model import Track
 from logger import set_up_logger_config
 
 
+# TODO
+#  Сначала избавляемся от номера
+#  Потом разделяем Title и Artist
+#  Обработали Title и Artist на feat
+#  Обработали Title на OP EN скобки
+#  Обработали Title, Album на мусорные скобки
 class TagChanger:
     def __init__(self, target_dir: str, artist_dirs: list[str]) -> None:
         set_up_logger_config()
@@ -29,26 +35,24 @@ class TagChanger:
     @staticmethod
     def split_artist(target: str) -> [str, list[str]]:
         target = target.split(',')
-        target = [s.strip() for s in target]
-        artist = target.pop(0)
+        other = [s.strip() for s in target]
+        artist = other.pop(0)
 
-        return artist, target
+        return artist, other
 
     def find_feats(self, target: str) -> [str, list[str]]:
+        artist = target
         feats = []
         match = self.pattern_to_feat.search(target)
 
         if match:
-            target = self.pattern_to_feat.sub('', target)
+            artist = self.pattern_to_feat.sub('', target).strip()
             match = self.pattern_to_feat.search(match.group())
             feats = match.group('other').split(',')
+            feats = [feat.strip() for feat in feats]
 
-        return target, feats
+        return artist, feats
 
 
 if __name__ == '__main__':
     a = TagChanger('a', ['a', 'b'])
-    print(a.find_feats('name'))
-    print(a.find_feats('name (feat. other2)'))
-    print(a.find_feats('name (feat. other1, other2)'))
-    print(a.find_feats('name feat. other1, other2'))

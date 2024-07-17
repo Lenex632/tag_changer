@@ -6,7 +6,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "default": {
-            "format": "[%(asctime)s] [%(name)s] [%(levelname)s]:  %(message)s (%(filename)s:%(lineno)d)",
+            "format": "[%(asctime)s] [%(levelname)s]:  %(message)s [%(filename)s::%(name)s::%(funcName)s::%(lineno)d]",
             "datefmt": "%Y-%m-%d %H:%M:%S"
         }
     },
@@ -27,7 +27,7 @@ LOGGING = {
         }
     },
     "loggers": {
-        "": {"handlers": ["console_handlers", "file_handler"], "level": "DEBUG"}
+        "": {"handlers": ["console_handlers", "file_handler"], "level": "NOTSET"}
     }
 }
 

@@ -2,9 +2,7 @@ import logging
 from pathlib import Path
 import re
 
-from datetime import datetime
 import eyed3
-from eyed3.core import AudioFile
 
 from model import SongData
 
@@ -25,12 +23,14 @@ class TagChanger:
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
 
     def delete_numbers(self, target: str) -> str:
+        """Удаление цифр в начале"""
         target = self.pattern_to_number.sub('', target)
         self.logger.debug(f'{target=}')
 
         return target
 
     def split_fullname(self, target: str) -> [str, str]:
+        """Разделение на artist, title"""
         try:
             artist, title = target.split(' - ')
         except ValueError:
@@ -42,6 +42,7 @@ class TagChanger:
         return artist, title
 
     def split_artist(self, target: str) -> [str, list[str]]:
+        """Разделение артистов, что идут через запятую"""
         target = target.split(',')
         feat = [s.strip() for s in target]
         artist = feat.pop(0)
@@ -50,6 +51,7 @@ class TagChanger:
         return artist, feat
 
     def find_feats(self, target: str) -> [str, list[str]]:
+        """Поиск соисполнителей в title и в artist"""
         feat = []
         match = self.pattern_to_feat.search(target)
 
@@ -64,6 +66,7 @@ class TagChanger:
         return target, feat
 
     def find_special(self, target: str) -> [str, str]:
+        """Поиск опенингов/эндингов в title"""
         special = ''
         match = self.pattern_to_special.search(target)
 
@@ -76,12 +79,14 @@ class TagChanger:
         return target, special
 
     def delete_brackets(self, target: str) -> str:
+        """Удаление мусорных скобок"""
         target = self.pattern_to_brackets.sub('', target).strip()
         self.logger.debug(f'{target=}')
 
         return target
 
     def merge(self, title: str, feat: list, special: str) -> str:
+        """Соединение title, feat и special воедино"""
         target = title
         if feat:
             target += f' (feat. {", ".join(feat)})'
@@ -92,6 +97,10 @@ class TagChanger:
         return target
 
     def get_image(self, file_dir: Path, album: str) -> Path | None:
+        """
+            Нахождение картинки по пути и названию альбома, если такой нет - создать из первого файла с картинкой, если
+            и это нельзя - вернуть None
+        """
         self.logger.debug(f'{file_dir}, {album}')
         images = list(file_dir.glob('*.jpg'))
         image_path = Path(file_dir, album + '.jpg')
@@ -125,14 +134,20 @@ class TagChanger:
             return None
 
     def delete_images(self, target_dir: Path) -> None:
+        """Удаляет все изображения из target_dir за исключением 'помеченных'"""
         for file in target_dir.iterdir():
             if file.is_dir():
                 self.delete_images(file)
-            elif file.suffix == '.jpg' and file.parent.name not in ['The Best', 'Nirvana']:
+            elif file.suffix == '.jpg' and file.parent.name not in ['The Best', 'Nirvana', 'OSU!']:
                 self.logger.info(f'Delete image {file}')
                 file.unlink()
 
     def get_info_from_file(self, file_path: Path) -> SongData:
+        """
+            Достаёт всю информацию из аудиофайла по пути file_path.
+            При level=3 изменяет путь до файла.
+            Записывает и возвращает все данные в виде SongData
+        """
         self.logger.debug(f'{file_path.stem}')
 
         relative_path = file_path.relative_to(self.target_dir)
@@ -185,6 +200,7 @@ class TagChanger:
         )
 
     def change_tags(self, song_data: SongData) -> None:
+        """Сначала стирает все id3 tag из файла, а потом записывает новыми, взятыми из song_data"""
         file_path = Path(self.target_dir, song_data.file_path)
         song = eyed3.load(file_path)
         song.initTag()
@@ -202,6 +218,7 @@ class TagChanger:
         self.logger.info(f'{song_data.artist} - {song_data.title} successfully save in {song_data.album}')
 
     def start(self, directory: Path) -> None:
+        """Основная выполняющая функция, которая рекурсивно пробегается по всем файлам в directory и изменяет их"""
         for file_path in directory.iterdir():
             if file_path.is_dir():
                 self.start(file_path)
@@ -219,7 +236,8 @@ if __name__ == '__main__':
     a = TagChanger('C:\\code\\tag_changer\\test_tag_change', ['Legend'])
     a.start(a.target_dir)
 
+    # проверки и возможные функции для вычисления или извлечения данных
     # logger = logging.getLogger('TagChanger')
-    # song = eyed3.load('C:\\code\\tag_changer\\test_tag_change\\'
-    #                   'Legend\\Saint Asonia\\Saint Asonia,Sharon den Adel - Sirens.mp3')
-    # logger.info(song.tag.images._fs[b'APIC'])
+    # music = eyed3.load('C:\\code\\tag_changer\\test_tag_change\\'
+    #                    'Legend\\Saint Asonia\\Flawed Design\\Saint Asonia,Sharon den Adel - Sirens.mp3')
+    # logger.info(music.tag.images._fs[b'APIC'][0].picture_type)

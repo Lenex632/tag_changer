@@ -13,13 +13,11 @@ LOGGING = {
     "handlers": {
         "console_handlers": {
             "class": "logging.StreamHandler",
-            "level": "DEBUG",
             "formatter": "default",
             "stream": sys.stdout
         },
         "file_handler": {
             "class": "logging.handlers.RotatingFileHandler",
-            "level": "DEBUG",
             "formatter": "default",
             "filename": 'Log.log',
             "maxBytes": 1024 * 1024,
@@ -27,7 +25,7 @@ LOGGING = {
         }
     },
     "loggers": {
-        "": {"handlers": ["console_handlers", "file_handler"], "level": "NOTSET"}
+        "TagChanger": {"handlers": ["console_handlers", "file_handler"], "level": "INFO"}
     }
 }
 

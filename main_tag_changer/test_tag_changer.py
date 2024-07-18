@@ -8,8 +8,8 @@ from logger import set_up_logger_config
 
 @pytest.fixture(scope="class")
 def tag_changer():
-    # set_up_logger_config()
-    return TagChanger('a', ['a', 'b'])
+    set_up_logger_config()
+    return TagChanger('C:\\code\\tag_changer\\test_tag_change', ['Legend'])
 
 
 class TestClass:
@@ -144,126 +144,172 @@ class TestClass:
         assert tag_changer.merge('Title', [], '(EN One Piece)') == 'Title (EN One Piece)'
 
     def test_get_file_info(self, tag_changer):
-        files = [
+        input_data = [
             'C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\Saint Asonia,Sharon den Adel - Sirens.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\1. Name1.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\2 - Name2 (feat. artist).mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\3 Name3 (Japen Version).mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\4 Name4 (OP1).mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\5. Name5 (Just Anothe Name).mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\6 - +-0.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\7 +-0.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\45.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\name w-o number.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\6 - +-0.mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\1. Name1.mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\2 - Name2 (feat. artist).mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\3 Name3 (Japan Version).mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\4 Name4 (OP1).mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\'
+            '5. Name5 (Just Another Name).mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\6 - +-0.mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\7 +-0.mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\45.mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\name w-o number.mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\6 - +-0.mp3',
             'C:\\code\\tag_changer\\test_tag_change\\The Best\\'
-            'Taio Cruz, Some Artis, Some2 - Dynamite (feat. Some1).mp3',
+            'Taio Cruz, Some Artis, Some1 - Dynamite (feat. Some2).mp3',
             'C:\\code\\tag_changer\\test_tag_change\\The Best\\test album\\EMPiRE - RiGHT NOW (EN9).mp3'
         ]
-        results = [
+        output_results = [
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\'
-                               'Saint Asonia,Sharon den Adel - Sirens.mp3'),
-                artist='Saint Asonia',
+                file_path=Path('Legend\\Saint Asonia\\Saint Asonia,Sharon den Adel - Sirens.mp3'),
                 title='Sirens',
+                artist='Saint Asonia',
+                album='Flawed Design',
                 feat=['Sharon den Adel'],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\Saint Asonia\\Flawed Design\\Flawed Design.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '1. Name1.mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\1. Name1.mp3'),
                 title='Name1',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '2 - Name2 (feat. artist).mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\2 - Name2 (feat. artist).mp3'),
                 title='Name2',
+                artist='test artist',
+                album='test_album_2',
                 feat=['artist'],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '3 Name3 (Japen Version).mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\3 Name3 (Japan Version).mp3'),
                 title='Name3',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '4 Name4 (OP1).mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\4 Name4 (OP1).mp3'),
                 title='Name4',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special='(OP1)'
+                special='(OP1)',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '5. Name5 (Just Anothe Name).mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\5. Name5 (Just Another Name).mp3'),
                 title='Name5',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '6 - +-0.mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\6 - +-0.mp3'),
                 title='+-0',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\7 +-0.mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\7 +-0.mp3'),
                 title='+-0',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\45.mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\45.mp3'),
                 title='45',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               'name w-o number.mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\name w-o number.mp3'),
                 title='name w-o number',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
-                               '6 - +-0.mp3'),
-                artist='',
+                file_path=Path('Legend\\test artist\\test_album_2\\6 - +-0.mp3'),
                 title='+-0',
+                artist='test artist',
+                album='test_album_2',
                 feat=[],
-                special=''
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\'
+                           'Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\'
-                               'Taio Cruz, Some Artis, Some2 - Dynamite (feat. Some1).mp3'),
-                artist='Taio Cruz',
+                file_path=Path('The Best\\Taio Cruz, Some Artis, Some1 - Dynamite (feat. Some2).mp3'),
                 title='Dynamite',
-                feat=['Some Artis', 'Some2', 'Some1'],
-                special=''
+                artist='Taio Cruz',
+                album='The Best',
+                feat=['Some Artis', 'Some1', 'Some2'],
+                special='',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\The Best.jpg')
             ),
             SongData(
-                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\test album\\'
-                               'EMPiRE - RiGHT NOW (EN9).mp3'),
-                artist='EMPiRE',
+                file_path=Path('The Best\\test album\\EMPiRE - RiGHT NOW (EN9).mp3'),
                 title='RiGHT NOW',
+                artist='EMPiRE',
+                album='test album',
                 feat=[],
-                special='(EN9)'
+                special='(EN9)',
+                image=Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\test album\\test album.jpg')
             )
         ]
 
-        for i, file in enumerate(files):
-            assert tag_changer.get_info_from_file(Path(file)) == results[i]
+        for i, file in enumerate(input_data):
+            assert tag_changer.get_info_from_file(Path(file)) == output_results[i]
+
+    def test_get_image_and_delete_images(self, tag_changer):
+        input_data = [
+            (Path('C:\\code\\tag_changer\\test_tag_change\\The Best'), 'The Best'),
+            (Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\test album'), 'test album'),
+            (Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_1'), 'test_album_1'),
+            (Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2'), 'test_album_2'),
+            (Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia'), 'Saint Asonia'),
+        ]
+        output_results = [
+            None,
+            Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\test album\\test album.jpg'),
+            None,
+            Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_album_2\\test_album_2.jpg'),
+            Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\Saint Asonia.jpg'),
+        ]
+        for i, (file_path, album) in enumerate(input_data):
+            assert tag_changer.get_image(file_path, album) == output_results[i]
+        tag_changer.delete_images(tag_changer.target_dir)  # TODO дописать тесты через вывод логов

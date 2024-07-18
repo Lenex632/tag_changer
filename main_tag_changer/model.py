@@ -4,11 +4,11 @@ from pathlib import Path
 
 @dataclass
 class SongData:
-    file_path: str | Path = None
-    title: str = None
-    artist: str = None
-    album: str = None
-    feat: list = None
-    special: str = None
-    image: bool | Path = None
+    file_path: str | Path
+    title: str
+    artist: str
+    album: str
+    feat: list
+    special: str
+    image: Path | None = None
     timestamp: str = None

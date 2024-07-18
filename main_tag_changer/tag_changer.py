@@ -21,7 +21,7 @@ class TagChanger:
     def __init__(self, target_dir: str, artist_dirs: list[str]) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.target_dir = Path(target_dir)
-        self.artist_dirs = map(Path, artist_dirs)
+        self.artist_dirs = artist_dirs
 
         # цифры + скобки|пробелы|точки|прочее
         self.pattern_to_number = re.compile(r'^\d+(\W | \W | |\)|\) )')
@@ -100,31 +100,56 @@ class TagChanger:
         return target
 
     def get_image(self, file_dir: Path, album: str) -> Path | None:
-        self.logger.debug(file_dir)
+        self.logger.debug(f'{file_dir}, {album}')
         images = list(file_dir.glob('*.jpg'))
         image_path = Path(file_dir, album + '.jpg')
 
         if images:
             image = images[0]
-            image.rename(image_path)
+            if image.stem != album:
+                image.rename(image_path)
+            self.logger.debug(f'Get image image {str(image_path)}')
             return image_path
         else:
             for file_path in file_dir.iterdir():
-                song = eyed3.load(file_path)
                 try:
+                    song = eyed3.load(file_path)
                     image = song.tag.images[0].image_data
                     with open(image_path, 'wb+') as album_cover:
                         album_cover.write(image)
-                    self.logger.info(f'Create image {image_path.__str__()}')
+                    self.logger.info(f'Create image {str(image_path)}')
                     return image_path
                 except IndexError:
-                    return None
+                    self.logger.debug(f'AudioFile has no images: {file_path}')
+                    continue
                 except AttributeError:
-                    return None
+                    # TODO узнать при каких условиях может вызваться
+                    continue
+                except OSError:
+                    self.logger.debug(f'eyed3 try to load not an AudioFile: {file_path}')
+                    continue
 
-    def get_info_from_file(self, file: Path) -> [str, str, str, str]:
-        self.logger.debug(f'{file.stem}')
-        target = self.delete_numbers(file.stem)
+            self.logger.info(f'Cant find image in {file_dir.name} for {album}')
+            return None
+
+    def delete_images(self, target_dir: Path) -> None:
+        for file in target_dir.iterdir():
+            if file.is_dir():
+                self.delete_images(file)
+            elif file.suffix == '.jpg' and file.parent.name not in ['The Best', 'Nirvana']:
+                self.logger.info(f'Delete image {file}')
+                file.unlink()
+
+    def get_info_from_file(self, file_path: Path) -> SongData:
+        self.logger.debug(f'{file_path.stem}')
+
+        relative_path = file_path.relative_to(self.target_dir)
+        if relative_path.parts[0] in self.artist_dirs:
+            level = len(relative_path.parts)
+        else:
+            level = len(relative_path.parts) - 1
+
+        target = self.delete_numbers(relative_path.stem)
         artist, title = self.split_fullname(target)
         artist, feat1 = self.split_artist(artist)
         artist, feat2 = self.find_feats(artist)
@@ -133,24 +158,55 @@ class TagChanger:
         title, special = self.find_special(title)
         title = self.delete_brackets(title)
 
-        return SongData(file_path=file, artist=artist, title=title, feat=feat, special=special)
+        song = eyed3.load(file_path)
+
+        if level == 1:
+            # песни в директориях (как в the best)
+            album = relative_path.parts[0]
+        elif level == 2:
+            # песни в директориях и в альбоме
+            album = relative_path.parts[1]
+        elif level == 3:
+            # песни в исполнителе без альбома (создаётся папка с альбомом)
+            try:
+                album = song.tag.album
+            except AttributeError:
+                album = 'Without Album'
+            album_dir = Path(file_path.parent, album)
+            album_dir.mkdir(parents=True, exist_ok=True)
+            file_path = file_path.replace(Path(album_dir, file_path.name))
+        else:
+            # песни в исполнителях в альбомах (level == 4)
+            artist = relative_path.parts[1]
+            album = relative_path.parts[2]
+        image = self.get_image(file_path.parent, album)
+
+        return SongData(
+            file_path=relative_path,
+            title=title,
+            artist=artist,
+            album=album,
+            feat=feat,
+            special=special,
+            image=image
+        )
 
     def start(self, directory: Path) -> None:
-        for file_path in directory.iterdir():
-            file = file_path.relative_to(self.target_dir)
-            level = len(file.parts) - 1
+        for full_path in directory.iterdir():
+            file_path = full_path.relative_to(self.target_dir)
+            level = len(file_path.parts) - 1
 
-            if file_path.is_dir():
-                self.logger.debug(f'{"---" * level}|{file.name}')
-                self.start(file_path)
-            elif file_path.is_file() and file.suffix != '.jpg':
-                self.logger.debug(f'{"---" * level}>{file.name}')
-                song_data = self.get_info_from_file(file_path)
+            if full_path.is_dir():
+                self.logger.info(f'{"---" * level}|{file_path.name}')
+                self.start(full_path)
+            elif full_path.is_file() and full_path.suffix != '.jpg':
+                self.logger.info(f'{"---" * level}>{file_path.name}')
+                song_data = self.get_info_from_file(full_path)
 
 
 if __name__ == '__main__':
     from logger import set_up_logger_config
     set_up_logger_config()
 
-    a = TagChanger('C:\\code\\tag_changer\\test_tag_change', ['a', 'b'])
+    a = TagChanger('C:\\code\\tag_changer\\test_tag_change', ['Legend'])
     a.start(a.target_dir)

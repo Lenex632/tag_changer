@@ -9,14 +9,6 @@ from eyed3.core import AudioFile
 from model import SongData
 
 
-# TODO
-#  Сначала избавляемся от номера (check)
-#  Потом разделяем Title и Artist (check)
-#  Обработали Title и Artist на feat (check)
-#  Обработали Title на OP EN скобки (check)
-#  Обработали Title, Album на мусорные скобки (check)
-#  Разделили на Artist и Other (check)
-#  Объединили Title + feat. + OP EN (check)
 class TagChanger:
     def __init__(self, target_dir: str, artist_dirs: list[str]) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -175,6 +167,7 @@ class TagChanger:
             album_dir = Path(file_path.parent, album)
             album_dir.mkdir(parents=True, exist_ok=True)
             file_path = file_path.replace(Path(album_dir, file_path.name))
+            relative_path = file_path.relative_to(self.target_dir)
         else:
             # песни в исполнителях в альбомах (level == 4)
             artist = relative_path.parts[1]
@@ -191,17 +184,32 @@ class TagChanger:
             image=image
         )
 
-    def start(self, directory: Path) -> None:
-        for full_path in directory.iterdir():
-            file_path = full_path.relative_to(self.target_dir)
-            level = len(file_path.parts) - 1
+    def change_tags(self, song_data: SongData) -> None:
+        file_path = Path(self.target_dir, song_data.file_path)
+        song = eyed3.load(file_path)
+        song.initTag()
+        song.tag.remove(file_path)
 
-            if full_path.is_dir():
-                self.logger.info(f'{"---" * level}|{file_path.name}')
-                self.start(full_path)
-            elif full_path.is_file() and full_path.suffix != '.jpg':
-                self.logger.info(f'{"---" * level}>{file_path.name}')
-                song_data = self.get_info_from_file(full_path)
+        title = self.merge(song_data.title, song_data.feat, song_data.special)
+        song.tag.title = title
+        song.tag.artist = song_data.artist
+        song.tag.album = song_data.album
+        if song_data.image:
+            with open(song_data.image, "rb") as image:
+                song.tag.images.set(3, image.read(), "image/jpeg")
+
+        song.tag.save()
+        self.logger.info(f'{song_data.artist} - {song_data.title} successfully save in {song_data.album}')
+
+    def start(self, directory: Path) -> None:
+        for file_path in directory.iterdir():
+            if file_path.is_dir():
+                self.start(file_path)
+            elif file_path.is_file() and file_path.suffix != '.jpg':
+                song_data = self.get_info_from_file(file_path)
+                self.change_tags(song_data)
+
+        self.delete_images(self.target_dir)
 
 
 if __name__ == '__main__':
@@ -210,3 +218,8 @@ if __name__ == '__main__':
 
     a = TagChanger('C:\\code\\tag_changer\\test_tag_change', ['Legend'])
     a.start(a.target_dir)
+
+    # logger = logging.getLogger('TagChanger')
+    # song = eyed3.load('C:\\code\\tag_changer\\test_tag_change\\'
+    #                   'Legend\\Saint Asonia\\Saint Asonia,Sharon den Adel - Sirens.mp3')
+    # logger.info(song.tag.images._fs[b'APIC'])

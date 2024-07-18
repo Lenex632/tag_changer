@@ -1,12 +1,14 @@
 from pathlib import Path
 
 import pytest
+from model import SongData
 from tag_changer import TagChanger
 from logger import set_up_logger_config
 
 
 @pytest.fixture(scope="class")
 def tag_changer():
+    # set_up_logger_config()
     return TagChanger('a', ['a', 'b'])
 
 
@@ -154,23 +156,113 @@ class TestClass:
             'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\45.mp3',
             'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\name w-o number.mp3',
             'C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\6 - +-0.mp3',
-            'C:\\code\\tag_changer\\test_tag_change\\The Best\\Taio Cruz, Some Artis, Some2 - Dynamite (feat. Some1).mp3',
+            'C:\\code\\tag_changer\\test_tag_change\\The Best\\'
+            'Taio Cruz, Some Artis, Some2 - Dynamite (feat. Some1).mp3',
             'C:\\code\\tag_changer\\test_tag_change\\The Best\\test album\\EMPiRE - RiGHT NOW (EN9).mp3'
         ]
         results = [
-            ('Saint Asonia', 'Sirens', ['Sharon den Adel'], ''),
-            ('', 'Name1', [], ''),
-            ('', 'Name2', ['artist'], ''),
-            ('', 'Name3', [], ''),
-            ('', 'Name4', [], '(OP1)'),
-            ('', 'Name5', [], ''),
-            ('', '+-0', [], ''),
-            ('', '+-0', [], ''),
-            ('', '45', [], ''),
-            ('', 'name w-o number', [], ''),
-            ('', '+-0', [], ''),
-            ('Taio Cruz', 'Dynamite', ['Some Artis', 'Some2', 'Some1'], ''),
-            ('EMPiRE', 'RiGHT NOW', [], '(EN9)')
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\'
+                               'Saint Asonia,Sharon den Adel - Sirens.mp3'),
+                artist='Saint Asonia',
+                title='Sirens',
+                feat=['Sharon den Adel'],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '1. Name1.mp3'),
+                artist='',
+                title='Name1',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '2 - Name2 (feat. artist).mp3'),
+                artist='',
+                title='Name2',
+                feat=['artist'],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '3 Name3 (Japen Version).mp3'),
+                artist='',
+                title='Name3',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '4 Name4 (OP1).mp3'),
+                artist='',
+                title='Name4',
+                feat=[],
+                special='(OP1)'
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '5. Name5 (Just Anothe Name).mp3'),
+                artist='',
+                title='Name5',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '6 - +-0.mp3'),
+                artist='',
+                title='+-0',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\7 +-0.mp3'),
+                artist='',
+                title='+-0',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\45.mp3'),
+                artist='',
+                title='45',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               'name w-o number.mp3'),
+                artist='',
+                title='name w-o number',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\Legend\\test artist\\test_albom_2\\'
+                               '6 - +-0.mp3'),
+                artist='',
+                title='+-0',
+                feat=[],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\'
+                               'Taio Cruz, Some Artis, Some2 - Dynamite (feat. Some1).mp3'),
+                artist='Taio Cruz',
+                title='Dynamite',
+                feat=['Some Artis', 'Some2', 'Some1'],
+                special=''
+            ),
+            SongData(
+                file_path=Path('C:\\code\\tag_changer\\test_tag_change\\The Best\\test album\\'
+                               'EMPiRE - RiGHT NOW (EN9).mp3'),
+                artist='EMPiRE',
+                title='RiGHT NOW',
+                feat=[],
+                special='(EN9)'
+            )
         ]
 
         for i, file in enumerate(files):

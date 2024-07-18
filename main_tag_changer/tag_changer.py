@@ -1,9 +1,10 @@
-import re
-import eyed3
 import logging
-
-from eyed3.core import AudioFile
 from pathlib import Path
+import re
+
+from datetime import datetime
+import eyed3
+from eyed3.core import AudioFile
 
 from model import SongData
 
@@ -33,7 +34,7 @@ class TagChanger:
 
     def delete_numbers(self, target: str) -> str:
         target = self.pattern_to_number.sub('', target)
-        self.logger.debug(f'delete_numbers result: {target=}')
+        self.logger.debug(f'{target=}')
 
         return target
 
@@ -44,7 +45,7 @@ class TagChanger:
             artist = ''
             title = target
 
-        self.logger.debug(f'split_fullname result: {artist=}, {title=}')
+        self.logger.debug(f'{artist=}, {title=}')
 
         return artist, title
 
@@ -52,7 +53,7 @@ class TagChanger:
         target = target.split(',')
         feat = [s.strip() for s in target]
         artist = feat.pop(0)
-        self.logger.debug(f'split_artist result: {artist=}, {feat=}')
+        self.logger.debug(f'{artist=}, {feat=}')
 
         return artist, feat
 
@@ -66,7 +67,7 @@ class TagChanger:
             feat = match.group('feats').split(',')
             feat = [feat.strip() for feat in feat]
 
-        self.logger.debug(f'find_feats result: {target=}, {feat=}')
+        self.logger.debug(f'{target=}, {feat=}')
 
         return target, feat
 
@@ -78,13 +79,13 @@ class TagChanger:
             special = match.group()
             target = target.replace(special, '').strip()
 
-        self.logger.debug(f'find_special result: {target=}, {special=}')
+        self.logger.debug(f'{target=}, {special=}')
 
         return target, special
 
     def delete_brackets(self, target: str) -> str:
         target = self.pattern_to_brackets.sub('', target).strip()
-        self.logger.debug(f'delete_brackets result: {target=}')
+        self.logger.debug(f'{target=}')
 
         return target
 
@@ -94,9 +95,32 @@ class TagChanger:
             target += f' (feat. {", ".join(feat)})'
         if special:
             target += f' {special}'
-        self.logger.debug(f'merge result: {target=}')
+        self.logger.debug(f'{target=}')
 
         return target
+
+    def get_image(self, file_dir: Path, album: str) -> Path | None:
+        self.logger.debug(file_dir)
+        images = list(file_dir.glob('*.jpg'))
+        image_path = Path(file_dir, album + '.jpg')
+
+        if images:
+            image = images[0]
+            image.rename(image_path)
+            return image_path
+        else:
+            for file_path in file_dir.iterdir():
+                song = eyed3.load(file_path)
+                try:
+                    image = song.tag.images[0].image_data
+                    with open(image_path, 'wb+') as album_cover:
+                        album_cover.write(image)
+                    self.logger.info(f'Create image {image_path.__str__()}')
+                    return image_path
+                except IndexError:
+                    return None
+                except AttributeError:
+                    return None
 
     def get_info_from_file(self, file: Path) -> [str, str, str, str]:
         self.logger.debug(f'{file.stem}')
@@ -109,9 +133,9 @@ class TagChanger:
         title, special = self.find_special(title)
         title = self.delete_brackets(title)
 
-        return artist, title, feat, special
+        return SongData(file_path=file, artist=artist, title=title, feat=feat, special=special)
 
-    def start(self, directory: Path):
+    def start(self, directory: Path) -> None:
         for file_path in directory.iterdir():
             file = file_path.relative_to(self.target_dir)
             level = len(file.parts) - 1
@@ -121,7 +145,7 @@ class TagChanger:
                 self.start(file_path)
             elif file_path.is_file() and file.suffix != '.jpg':
                 self.logger.debug(f'{"---" * level}>{file.name}')
-                artist, title, feat, special = self.get_info_from_file(file_path)
+                song_data = self.get_info_from_file(file_path)
 
 
 if __name__ == '__main__':

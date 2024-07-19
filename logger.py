@@ -25,7 +25,8 @@ LOGGING = {
         }
     },
     "loggers": {
-        "TagChanger": {"handlers": ["console_handlers", "file_handler"], "level": "INFO"}
+        "TagChanger": {"handlers": ["console_handlers", "file_handler"], "level": "INFO"},
+        "DBController": {"handlers": ["console_handlers", "file_handler"], "level": "DEBUG"}
     }
 }
 

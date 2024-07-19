@@ -6,7 +6,7 @@ from tag_changer import TagChanger
 from logger import set_up_logger_config
 
 
-class TestClass:
+class TestTagChanger:
     @pytest.fixture(scope="class")
     def tag_changer(self):
         set_up_logger_config()

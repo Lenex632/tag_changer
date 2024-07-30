@@ -3,11 +3,13 @@ import pytest
 
 from db_controller import DBController
 from model import SongData
+from logger import set_up_logger_config
 
 
 class TestDB:
     @pytest.fixture
     def db_name(self):
+        set_up_logger_config()
         return 'test.db'
 
     @pytest.fixture
@@ -20,7 +22,7 @@ class TestDB:
         normal_connection_to_db.__del__()
         Path.unlink(Path(db_name))
 
-    def test_insert(self, normal_connection_to_db):
+    def test_insert_and_find(self, normal_connection_to_db):
         db = normal_connection_to_db
         db.insert(SongData(
             file_path=Path('The Best\\test album\\EMPiRE - RiGHT NOW (EN9).mp3'),
@@ -50,6 +52,47 @@ class TestDB:
             image=Path(f'target_dir\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
         ))
 
-    def test_delete(self, normal_connection_to_db, delete_test_db):
+        results = db.find()
+        assert len(results) == 3
+
+        results = db.find('song_id = 1')
+        assert results == [(
+            1,
+            'The Best\\test album\\EMPiRE - RiGHT NOW (EN9).mp3',
+            'RiGHT NOW',
+            'EMPiRE',
+            'test album',
+            '[]',
+            '(EN9)',
+            'target_dir\\The Best\\test album\\test album.jpg'
+        )]
+
+    def test_update(self, normal_connection_to_db):
         db = normal_connection_to_db
+
+        results = db.find('song_id = 1')
+        assert results[0][2] == 'RiGHT NOW'
+
+        db.update('song_id = 1', 'title = "new_title"')
+        results = db.find('song_id = 1')
+        assert results[0][2] == 'new_title'
+
+    def test_delete(self, normal_connection_to_db):
+        db = normal_connection_to_db
+
+        results = db.find()
+        assert len(results) == 3
+
         db.delete(1)
+        results = db.find()
+        assert len(results) == 2
+
+    def test_clear_table(self, normal_connection_to_db, delete_test_db):
+        db = normal_connection_to_db
+
+        results = db.find()
+        assert len(results) == 2
+
+        db.clear_table()
+        results = db.find()
+        assert len(results) == 0

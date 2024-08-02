@@ -5,6 +5,7 @@ import re
 import eyed3
 
 from model import SongData
+# from db.db_controller import DBController
 
 
 class TagChanger:
@@ -21,6 +22,8 @@ class TagChanger:
         self.pattern_to_special = re.compile(r'\((OP|EN)(\d? |\d).*?\)')
         # мусорные скобки
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
+        # self.db = DBController()
+        # self.db.clear_table()
 
     def delete_numbers(self, target: str) -> str:
         """Удаление цифр в начале"""
@@ -219,16 +222,12 @@ class TagChanger:
 
     def start(self, directory: Path) -> None:
         """Основная выполняющая функция, которая рекурсивно пробегается по всем файлам в directory и изменяет их"""
-        from db.db_controller import DBController
-        db = DBController()
-        db.clear_table()
-
         for file_path in directory.iterdir():
             if file_path.is_dir():
                 self.start(file_path)
             elif file_path.is_file() and file_path.suffix != '.jpg':
                 song_data = self.get_info_from_file(file_path)
-                db.insert(song_data)
+                # self.db.insert(song_data)
                 self.change_tags(song_data)
 
         self.delete_images(self.target_dir)

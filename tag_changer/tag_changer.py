@@ -219,11 +219,16 @@ class TagChanger:
 
     def start(self, directory: Path) -> None:
         """Основная выполняющая функция, которая рекурсивно пробегается по всем файлам в directory и изменяет их"""
+        from db.db_controller import DBController
+        db = DBController()
+        db.clear_table()
+
         for file_path in directory.iterdir():
             if file_path.is_dir():
                 self.start(file_path)
             elif file_path.is_file() and file_path.suffix != '.jpg':
                 song_data = self.get_info_from_file(file_path)
+                db.insert(song_data)
                 self.change_tags(song_data)
 
         self.delete_images(self.target_dir)

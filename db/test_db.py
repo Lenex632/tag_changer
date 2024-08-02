@@ -77,6 +77,24 @@ class TestDB:
         results = db.find('song_id = 1')
         assert results[0][2] == 'new_title'
 
+    def test_find_duplicates(self, normal_connection_to_db):
+        db = normal_connection_to_db
+
+        results = db.find_duplicates()
+        assert len(results) == 0
+
+        db.insert(SongData(
+            file_path=Path('some\\other\\path\\EMPiRE - RiGHT NOW (EN9).mp3'),
+            title='RiGHT NOW',
+            artist='EMPiRE',
+            album='test album',
+            feat=[],
+            special='(EN9)',
+            image=Path('some\\other\\path\\test album.jpg')
+        ))
+        results = db.find_duplicates()
+        assert len(results) == 1
+
     def test_delete(self, normal_connection_to_db):
         db = normal_connection_to_db
 

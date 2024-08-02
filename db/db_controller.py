@@ -63,15 +63,34 @@ class DBController:
         else:
             query = f'SELECT * FROM {self.table_name}'
         self.cursor.execute(query)
-        result = self.cursor.fetchall()
-        self.logger.info(f'{len(result)} rows was found in table "{self.table_name}" for {condition=}')
+        results = self.cursor.fetchall()
+        self.logger.info(f'{len(results)} rows was found in table "{self.table_name}" for {condition=}')
 
-        return result
+        return results
 
     def update(self, condition: str, new: str):
         query = f'UPDATE {self.table_name} SET {new} WHERE {condition}'
         self.logger.debug(f'Update table "{self.table_name}" where {condition} with new parameters {new}')
         self.cursor.execute(query)
+
+    def find_duplicates(self):
+        query = f'''
+            SELECT title, artist, COUNT(*)
+            FROM {self.table_name}
+            GROUP BY artist, title
+            HAVING COUNT(*) > 1;
+        '''
+        self.cursor.execute(query)
+        results = self.cursor.fetchall()
+        self.logger.info(f'{len(results)} duplicates was found in table "{self.table_name}"')
+
+        duplicates = []
+        for res in results:
+            condition = f'title = "{res[0]}" AND artist = "{res[1]}"'
+            duplicate = self.find(condition)
+            duplicates.append(duplicate)
+
+        return duplicates
 
 
 if __name__ == '__main__':

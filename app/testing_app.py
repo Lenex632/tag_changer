@@ -1,4 +1,5 @@
 import sys
+import configparser
 
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import (
@@ -10,10 +11,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGridLayout,
     QPushButton,
-    QDialog,
     QFileDialog,
     QTextEdit,
-    QLayout,
 )
 
 
@@ -150,6 +149,10 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    app.exec()
+    # app = QApplication(sys.argv)
+    # window = MainWindow()
+    # app.exec()
+    config = configparser.ConfigParser()
+    config.read('../settings.ini')
+    print(config['settings']['target_dir'])
+    print(config.get('settings', 'artist_dir').split('\n'))

@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 
 class Settings:
     def __init__(self):
+        """Класс для работы с файлом настроек и конфигураций"""
         self._settings = configparser.ConfigParser()
         self.path = Path(Path(__file__).parent.parent, 'settings.ini')
         if self.path:
@@ -29,22 +30,27 @@ class Settings:
         self.set_defaults()
 
     def set_defaults(self) -> None:
+        """Настраивает дефолтные значения из settings.ini при запуске программы"""
         self.target_dir = self._settings.get(section='settings', option='target_dir', fallback=None)
         self.artist_dirs = self._settings.get(section='settings', option='artist_dirs', fallback='').split('\n')
 
     def set_target_dir(self, value) -> None:
+        """Настраивает значение target_dir"""
         self._settings.set(section='settings', option='target_dir', value=value)
         self.target_dir = value
 
     def set_artist_dir(self, value) -> None:
+        """Настраивает значение artist_dirs"""
         self._settings.set(section='settings', option='artist_dirs', value=value)
         self.artist_dirs = value
 
     def save_settings(self) -> None:
+        """Сохраняет настройки в файл settings.ini"""
         with open(self.path, 'w') as file:
             self._settings.write(file)
 
     def clean_data(self) -> None:
+        """Сбрасывает настройки и сохраняет их в файл"""
         self.set_target_dir('')
         self.set_artist_dir('')
         self.save_settings()
@@ -52,6 +58,7 @@ class Settings:
 
 class TargetDir(QWidget):
     def __init__(self, settings):
+        """Класс для работы с полем для ввода target_dir"""
         super().__init__()
         self.settings = settings
         self.placeholder = 'Укажите путь к исходной папке'
@@ -63,18 +70,21 @@ class TargetDir(QWidget):
         self.create_layout()
 
     def create_button(self) -> QPushButton:
+        """Создаёт кнопку для выбора директории в общем пространстве"""
         button = QPushButton('O')
         button.clicked.connect(self.click_button)
 
         return button
 
     def click_button(self) -> None:
+        """Создаёт диалог с поиском директории в общем пространстве и возвращает полученное значение"""
         dialog = QFileDialog()
         dialog.setWindowTitle(self.placeholder)
         chosen_dir = dialog.getExistingDirectory()
         self.fild.setText(chosen_dir)
 
     def create_fild(self) -> QTextEdit:
+        """Создаёт поле в которое будет записываться значение target_dir"""
         fild = QTextEdit()
         fild.setPlaceholderText(self.placeholder)
         if self.settings.target_dir:
@@ -83,6 +93,7 @@ class TargetDir(QWidget):
         return fild
 
     def create_layout(self) -> None:
+        """Создаёт виджет для размещения в окне"""
         bottom_layout = QHBoxLayout()
         bottom_layout.addWidget(self.button)
         bottom_layout.addWidget(self.fild)
@@ -96,6 +107,7 @@ class TargetDir(QWidget):
 
 class ArtistDirs(QWidget):
     def __init__(self, settings):
+        """Класс для работы с полем для ввода artist_dir"""
         super().__init__()
         self.settings = settings
         self.placeholder = 'Укажите папки с исполнителями для Уровня 2 (каждый с новой строки)'
@@ -106,6 +118,7 @@ class ArtistDirs(QWidget):
         self.create_layout()
 
     def create_fild(self) -> QTextEdit:
+        """Создаёт поле в которое будет записываться значение artist_dir"""
         fild = QTextEdit()
         fild.setPlaceholderText(self.placeholder)
         if self.settings.artist_dirs:
@@ -115,6 +128,7 @@ class ArtistDirs(QWidget):
         return fild
 
     def create_layout(self) -> None:
+        """Создаёт виджет для размещения в окне"""
         layout = QVBoxLayout()
         layout.addWidget(self.label)
         layout.addWidget(self.fild)
@@ -124,23 +138,19 @@ class ArtistDirs(QWidget):
 
 class MainButton(QWidget):
     def __init__(self, settings):
+        """Класс для работы с кнопками в главном окне"""
         super().__init__()
         self.settings = settings
 
-        self.readme_button = self.create_button('Открыть ReadMe', self.open_readme)
-        self.reset_settings_button = self.create_button('Сбросить настройки', self.reset_settings)
-        self.save_settings_button = self.create_button('Сохранить настройки', self.save_settings)
-        self.start_button = self.create_button('Запуск   >>', self.start)
+        self.readme_button = QPushButton('Открыть ReadMe')
+        self.reset_settings_button = QPushButton('Сбросить настройки')
+        self.save_settings_button = QPushButton('Сохранить настройки')
+        self.start_button = QPushButton('Запуск   >>')
 
         self.create_layout()
 
-    def create_button(self, name: str, func: callable) -> QPushButton:
-        button = QPushButton(name)
-        button.clicked.connect(func)
-
-        return button
-
     def create_layout(self):
+        """Создаёт виджет для размещения в окне"""
         layout = QGridLayout()
         layout.addWidget(self.readme_button, 0, 0)
         layout.addWidget(self.reset_settings_button, 1, 0)
@@ -149,29 +159,28 @@ class MainButton(QWidget):
 
         self.setLayout(layout)
 
-    def open_readme(self):
-        print('Открыть ReadMe')
-
-    def reset_settings(self):
-        self.settings.clean_data()
-        print('Сбросить настройки')
-
-    def save_settings(self):
-        print('Сохранить настройки')
-
-    def start(self):
-        print('Запуск   >>')
-
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        """Класс главного окна"""
         super().__init__()
+
         self.settings = Settings()
-
         self.set_window_parameters()
-        self.main_layout = QVBoxLayout()
-        self.create_main_layout()
 
+        # Создание виджетов
+        self.target_dir_widget = TargetDir(self.settings)
+        self.artist_dirs_widget = ArtistDirs(self.settings)
+        self.main_button_widget = MainButton(self.settings)
+
+        # Размещение виджетов
+        self.main_layout = QVBoxLayout()
+        self.main_layout.addWidget(self.target_dir_widget)
+        self.main_layout.addWidget(self.artist_dirs_widget)
+        self.main_layout.addWidget(self.main_button_widget)
+        self.set_up_buttons()
+
+        # Создание и размещение главного виджета
         widget = QWidget()
         widget.setLayout(self.main_layout)
         self.setCentralWidget(widget)
@@ -179,17 +188,45 @@ class MainWindow(QMainWindow):
         self.show()
 
     def set_window_parameters(self):
+        """Настройка параметров окна"""
         self.setWindowTitle('Tag Changer')
         self.setFixedSize(QSize(800, 500))
 
-    def create_main_layout(self):
-        target_dir_widget = TargetDir(self.settings)
-        artist_dirs_widget = ArtistDirs(self.settings)
-        main_button_widget = MainButton(self.settings)
+    def set_up_buttons(self):
+        """Настройка кнопок привязка их к исполняемым функциям"""
+        self.main_button_widget.readme_button.clicked.connect(self.open_readme)
+        self.main_button_widget.reset_settings_button.clicked.connect(self.reset_settings)
+        self.main_button_widget.save_settings_button.clicked.connect(self.save_settings)
+        self.main_button_widget.start_button.clicked.connect(self.start)
 
-        self.main_layout.addWidget(target_dir_widget)
-        self.main_layout.addWidget(artist_dirs_widget)
-        self.main_layout.addWidget(main_button_widget)
+    def open_readme(self):
+        """Открытие README.md в текстовом редакторе в качестве инструкций и подсказок"""
+        print(self.main_button_widget.readme_button.text())
+
+    def reset_settings(self):
+        """Сброс настроек"""
+        self.target_dir_widget.fild.setText('')
+        self.artist_dirs_widget.fild.setText('')
+        self.settings.clean_data()
+        print(self.main_button_widget.reset_settings_button.text())
+
+    def save_settings(self):
+        """Сохранение настроек"""
+        target_dir = self.target_dir_widget.fild.toPlainText()
+        artist_dir = self.artist_dirs_widget.fild.toPlainText()
+
+        self.settings.set_target_dir(target_dir)
+        self.settings.set_artist_dir(artist_dir)
+        self.settings.save_settings()
+
+        print(self.main_button_widget.save_settings_button.text())
+
+    def start(self):
+        """Запуск скрипта"""
+        target_dir = self.target_dir_widget.fild.toPlainText()
+        artist_dir = self.artist_dirs_widget.fild.toPlainText()
+
+        print(self.main_button_widget.start_button.text())
 
 
 if __name__ == '__main__':

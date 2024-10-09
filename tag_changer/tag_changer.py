@@ -9,10 +9,10 @@ from model import SongData
 
 
 class TagChanger:
-    def __init__(self, target_dir: str, artist_dirs: list[str]) -> None:
+    def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.target_dir = Path(target_dir)
-        self.artist_dirs = artist_dirs
+        self.target_dir = None
+        self.artist_dirs = None
 
         # цифры + скобки|пробелы|точки|прочее
         self.pattern_to_number = re.compile(r'^\d+(\W | \W | |\)|\) )')
@@ -24,6 +24,12 @@ class TagChanger:
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
         # self.db = DBController()
         # self.db.clear_table()
+
+    def set_up_target_dir(self, target_dir: str):
+        self.target_dir = Path(target_dir)
+
+    def set_up_artist_dirs(self, artist_dirs: str):
+        self.artist_dirs = artist_dirs.split('\n')
 
     def delete_numbers(self, target: str) -> str:
         """Удаление цифр в начале"""
@@ -237,7 +243,9 @@ if __name__ == '__main__':
     from logger import set_up_logger_config
     set_up_logger_config()
 
-    a = TagChanger('C:\\code\\tag_changer\\test_tag_change', ['Legend'])
+    a = TagChanger()
+    a.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
+    a.set_up_artist_dirs('Legend\nЛегенды')
     a.start(a.target_dir)
 
     # проверки и возможные функции для вычисления или извлечения данных

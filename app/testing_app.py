@@ -1,4 +1,5 @@
 import configparser
+import logging
 from pathlib import Path
 import sys
 
@@ -14,7 +15,10 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QFileDialog,
     QTextEdit,
+    QCheckBox,
 )
+
+from tag_changer.tag_changer import TagChanger
 
 
 class Settings:
@@ -142,6 +146,7 @@ class MainButton(QWidget):
         super().__init__()
         self.settings = settings
 
+        self.sync_checkbox = QCheckBox('Синхронизация')
         self.readme_button = QPushButton('Открыть ReadMe')
         self.reset_settings_button = QPushButton('Сбросить настройки')
         self.save_settings_button = QPushButton('Сохранить настройки')
@@ -152,10 +157,11 @@ class MainButton(QWidget):
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
         layout = QGridLayout()
-        layout.addWidget(self.readme_button, 0, 0)
-        layout.addWidget(self.reset_settings_button, 1, 0)
-        layout.addWidget(self.save_settings_button, 1, 1)
-        layout.addWidget(self.start_button, 1, 2)
+        layout.addWidget(self.sync_checkbox, 0, 0)
+        layout.addWidget(self.readme_button, 1, 0)
+        layout.addWidget(self.reset_settings_button, 2, 0)
+        layout.addWidget(self.save_settings_button, 2, 1)
+        layout.addWidget(self.start_button, 2, 2)
 
         self.setLayout(layout)
 
@@ -165,7 +171,10 @@ class MainWindow(QMainWindow):
         """Класс главного окна"""
         super().__init__()
 
+        self.logger = logging.getLogger('App')
+
         self.settings = Settings()
+        self.tag_changer = TagChanger()
         self.set_window_parameters()
 
         # Создание виджетов
@@ -201,14 +210,14 @@ class MainWindow(QMainWindow):
 
     def open_readme(self):
         """Открытие README.md в текстовом редакторе в качестве инструкций и подсказок"""
-        print(self.main_button_widget.readme_button.text())
+        self.logger.info('Открытие README')
 
     def reset_settings(self):
         """Сброс настроек"""
         self.target_dir_widget.fild.setText('')
         self.artist_dirs_widget.fild.setText('')
         self.settings.clean_data()
-        print(self.main_button_widget.reset_settings_button.text())
+        self.logger.info('Настройки сброшены')
 
     def save_settings(self):
         """Сохранение настроек"""
@@ -219,17 +228,24 @@ class MainWindow(QMainWindow):
         self.settings.set_artist_dir(artist_dir)
         self.settings.save_settings()
 
-        print(self.main_button_widget.save_settings_button.text())
+        self.logger.info('Настройки сохранены')
 
     def start(self):
         """Запуск скрипта"""
         target_dir = self.target_dir_widget.fild.toPlainText()
-        artist_dir = self.artist_dirs_widget.fild.toPlainText()
+        artist_dirs = self.artist_dirs_widget.fild.toPlainText()
 
-        print(self.main_button_widget.start_button.text())
+        self.tag_changer.set_up_target_dir(target_dir)
+        self.tag_changer.set_up_artist_dirs(artist_dirs)
+
+        self.tag_changer.start(self.tag_changer.target_dir)
+        self.logger.info('Запуск скрипта')
 
 
 if __name__ == '__main__':
+    from logger import set_up_logger_config
+    set_up_logger_config()
+
     app = QApplication(sys.argv)
     window = MainWindow()
     app.exec()

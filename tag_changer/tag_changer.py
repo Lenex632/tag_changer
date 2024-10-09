@@ -5,7 +5,6 @@ import re
 import eyed3
 
 from model import SongData
-# from db.db_controller import DBController
 
 
 class TagChanger:
@@ -22,8 +21,6 @@ class TagChanger:
         self.pattern_to_special = re.compile(r'\((OP|EN)(\d? |\d).*?\)')
         # мусорные скобки
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
-        # self.db = DBController()
-        # self.db.clear_table()
 
     def set_up_target_dir(self, target_dir: str):
         self.target_dir = Path(target_dir)
@@ -226,15 +223,15 @@ class TagChanger:
         song.tag.save()
         self.logger.info(f'{song_data.artist} - {song_data.title} successfully save in {song_data.album}')
 
-    def start(self, directory: Path) -> None:
+    def start(self, directory: Path):
         """Основная выполняющая функция, которая рекурсивно пробегается по всем файлам в directory и изменяет их"""
         for file_path in directory.iterdir():
             if file_path.is_dir():
-                self.start(file_path)
+                yield from self.start(file_path)
             elif file_path.is_file() and file_path.suffix != '.jpg':
                 song_data = self.get_info_from_file(file_path)
-                # self.db.insert(song_data)
                 self.change_tags(song_data)
+                yield song_data
 
         self.delete_images(self.target_dir)
 
@@ -246,7 +243,10 @@ if __name__ == '__main__':
     a = TagChanger()
     a.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
     a.set_up_artist_dirs('Legend\nЛегенды')
-    a.start(a.target_dir)
+    items = a.start(a.target_dir)
+    for item in items:
+        print(item)
+        # self.db.insert(song_data)
 
     # проверки и возможные функции для вычисления или извлечения данных
     # logger = logging.getLogger('TagChanger')

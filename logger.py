@@ -1,5 +1,9 @@
 import logging.config
+from pathlib import Path
 import sys
+
+
+file = Path(Path(__file__).parent, 'tag_changer.log')
 
 LOGGING = {
     "version": 1,
@@ -19,7 +23,7 @@ LOGGING = {
         "file_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "default",
-            "filename": 'Log.log',
+            "filename": file,
             "maxBytes": 1024 * 1024,
             "backupCount": 5
         }

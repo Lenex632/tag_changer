@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import sys
 
-from PyQt6.QtCore import QSize
+from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 from tag_changer.tag_changer import TagChanger
+from db.db_controller import DBController
 
 
 class Settings:
@@ -175,6 +176,7 @@ class MainWindow(QMainWindow):
 
         self.settings = Settings()
         self.tag_changer = TagChanger()
+        self.db = DBController()
         self.set_window_parameters()
 
         # Создание виджетов
@@ -234,12 +236,18 @@ class MainWindow(QMainWindow):
         """Запуск скрипта"""
         target_dir = self.target_dir_widget.fild.toPlainText()
         artist_dirs = self.artist_dirs_widget.fild.toPlainText()
+        need_to_sync = True if self.main_button_widget.sync_checkbox.checkState() is Qt.CheckState.Checked else False
 
         self.tag_changer.set_up_target_dir(target_dir)
         self.tag_changer.set_up_artist_dirs(artist_dirs)
 
-        self.tag_changer.start(self.tag_changer.target_dir)
         self.logger.info('Запуск скрипта')
+        song_datas = self.tag_changer.start(self.tag_changer.target_dir)
+        if need_to_sync:
+            self.db.clear_table()
+        else:
+            list(song_datas)
+        self.logger.info('Скрипт завершил работу')
 
 
 if __name__ == '__main__':

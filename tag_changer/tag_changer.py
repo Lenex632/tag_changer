@@ -4,9 +4,15 @@ import re
 
 import eyed3
 
+from db.db_controller import DBController
 from model import SongData
 
 
+# TODO
+#   Посмотреть библиотеки для парсинга и почитать о компиляторах, возможно получится упростить процедуру обработки
+#  имён фалов.
+#   Модифицировать что бы можно было изменить теги у папки -> закинуть папку в target_dir -> очистить папку, но оставить
+#  там структуру target_dir. Нужно что бы не закидывать в target_dir изменённые файлы, очищать, синхронизировать и тд.
 class TagChanger:
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -56,6 +62,7 @@ class TagChanger:
 
         return artist, feat
 
+    # TODO мб добавить '&'
     def find_feats(self, target: str) -> [str, list[str]]:
         """Поиск соисполнителей в title и в artist"""
         feat = []
@@ -91,21 +98,15 @@ class TagChanger:
 
         return target
 
-    def merge(self, title: str, feat: list, special: str) -> str:
+    @staticmethod
+    def merge(title: str, feat: str, special: str) -> str:
         """Соединение title, feat и special воедино"""
-        target = title
-        if feat:
-            target += f' (feat. {", ".join(feat)})'
-        if special:
-            target += f' {special}'
-        self.logger.debug(f'{target=}')
-
-        return target
+        return ' '.join(list(i for i in (title, f'(feat. {feat})' if feat else '', special) if i))
 
     def get_image(self, file_dir: Path, album: str) -> Path | None:
         """
-            Нахождение картинки по пути и названию альбома, если такой нет - создать из первого файла с картинкой, если
-            и это нельзя - вернуть None
+        Нахождение картинки по пути и названию альбома, если такой нет - создать из первого файла с картинкой, если
+        и это нельзя - вернуть None
         """
         self.logger.debug(f'{file_dir}, {album}')
         images = list(file_dir.glob('*.jpg'))
@@ -115,7 +116,7 @@ class TagChanger:
             image = images[0]
             if image.stem != album:
                 image.rename(image_path)
-            self.logger.debug(f'Get image image {str(image_path)}')
+            self.logger.debug(f'Get image image "{str(image_path)}"')
             return image_path
         else:
             for file_path in file_dir.iterdir():
@@ -124,19 +125,20 @@ class TagChanger:
                     image = song.tag.images[0].image_data
                     with open(image_path, 'wb+') as album_cover:
                         album_cover.write(image)
-                    self.logger.info(f'Create image {str(image_path)}')
+                    self.logger.debug(f'Create image "{str(image_path)}"')
                     return image_path
                 except IndexError:
-                    self.logger.debug(f'AudioFile has no images: {file_path}')
+                    self.logger.debug(f'AudioFile has no images: "{file_path}"')
                     continue
-                except AttributeError:
+                except AttributeError as e:
                     # TODO узнать при каких условиях может вызваться
+                    self.logger.error(f'Unknown error: {e}')
                     continue
                 except OSError:
-                    self.logger.debug(f'eyed3 try to load not an AudioFile: {file_path}')
+                    self.logger.debug(f'eyed3 try to load not an AudioFile: "{file_path}"')
                     continue
 
-            self.logger.info(f'Cant find image in {file_dir.name} for {album}')
+            self.logger.debug(f'Cant find image in "{file_dir.name}" for "{album}"')
             return None
 
     def delete_images(self, target_dir: Path) -> None:
@@ -145,14 +147,14 @@ class TagChanger:
             if file.is_dir():
                 self.delete_images(file)
             elif file.suffix == '.jpg' and file.parent.name not in ['The Best', 'Nirvana', 'OSU!']:
-                self.logger.info(f'Delete image {file}')
+                self.logger.debug(f'Delete image "{file}"')
                 file.unlink()
 
     def get_info_from_file(self, file_path: Path) -> SongData:
         """
-            Достаёт всю информацию из аудиофайла по пути file_path.
-            При level=3 изменяет путь до файла.
-            Записывает и возвращает все данные в виде SongData
+        Достаёт всю информацию из аудиофайла по пути file_path.
+        При level=3 изменяет путь до файла.
+        Записывает и возвращает все данные в виде SongData
         """
         self.logger.debug(f'{file_path.stem}')
 
@@ -167,7 +169,7 @@ class TagChanger:
         artist, feat1 = self.split_artist(artist)
         artist, feat2 = self.find_feats(artist)
         title, feat3 = self.find_feats(title)
-        feat = feat1 + feat2 + feat3
+        feat = ', '.join(feat1 + feat2 + feat3)
         title, special = self.find_special(title)
         title = self.delete_brackets(title)
 
@@ -221,7 +223,10 @@ class TagChanger:
                 song.tag.images.set(3, image.read(), "image/jpeg")
 
         song.tag.save()
-        self.logger.info(f'{song_data.artist} - {song_data.title} successfully save in {song_data.album}')
+        if song_data.image is not None:
+            song_data.image = song_data.image.relative_to(self.target_dir)
+
+        self.logger.info(f'"{song_data.artist}" - "{song_data.title}" successfully save in "{song_data.album}"')
 
     def start(self, directory: Path):
         """Основная выполняющая функция, которая рекурсивно пробегается по всем файлам в directory и изменяет их"""
@@ -244,9 +249,13 @@ if __name__ == '__main__':
     a.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
     a.set_up_artist_dirs('Legend\nЛегенды')
     items = a.start(a.target_dir)
-    for item in items:
-        print(item)
-        # self.db.insert(song_data)
+
+    db = DBController()
+
+    with db:
+        db.create_table_if_not_exist()
+        for item in items:
+            db.insert(item)
 
     # проверки и возможные функции для вычисления или извлечения данных
     # logger = logging.getLogger('TagChanger')

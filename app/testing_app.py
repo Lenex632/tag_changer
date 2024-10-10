@@ -61,6 +61,7 @@ class Settings:
         self.save_settings()
 
 
+# TODO переделать что бы можно было создавать и sync_dir
 class TargetDir(QWidget):
     def __init__(self, settings):
         """Класс для работы с полем для ввода target_dir"""
@@ -147,7 +148,7 @@ class MainButton(QWidget):
         super().__init__()
         self.settings = settings
 
-        self.sync_checkbox = QCheckBox('Синхронизация')
+        self.db_update_checkbox = QCheckBox('Обновить базу данных основываясь на обработанных данных')
         self.readme_button = QPushButton('Открыть ReadMe')
         self.reset_settings_button = QPushButton('Сбросить настройки')
         self.save_settings_button = QPushButton('Сохранить настройки')
@@ -158,11 +159,11 @@ class MainButton(QWidget):
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
         layout = QGridLayout()
-        layout.addWidget(self.sync_checkbox, 0, 0)
-        layout.addWidget(self.readme_button, 1, 0)
-        layout.addWidget(self.reset_settings_button, 2, 0)
-        layout.addWidget(self.save_settings_button, 2, 1)
-        layout.addWidget(self.start_button, 2, 2)
+        layout.addWidget(self.db_update_checkbox, row=0, column=0, rowSpan=1, columnSpan=2)
+        layout.addWidget(self.readme_button, row=1, column=0)
+        layout.addWidget(self.reset_settings_button, row=2, column=0)
+        layout.addWidget(self.save_settings_button, row=2, column=1)
+        layout.addWidget(self.start_button, row=2, column=2)
 
         self.setLayout(layout)
 
@@ -236,15 +237,16 @@ class MainWindow(QMainWindow):
         """Запуск скрипта"""
         target_dir = self.target_dir_widget.fild.toPlainText()
         artist_dirs = self.artist_dirs_widget.fild.toPlainText()
-        need_to_sync = True if self.main_button_widget.sync_checkbox.checkState() is Qt.CheckState.Checked else False
+        db_update = True if self.main_button_widget.db_update_checkbox.checkState() is Qt.CheckState.Checked else False
 
         self.tag_changer.set_up_target_dir(target_dir)
         self.tag_changer.set_up_artist_dirs(artist_dirs)
 
         self.logger.info('Запуск скрипта')
         song_datas = self.tag_changer.start(self.tag_changer.target_dir)
-        if need_to_sync:
+        if db_update:
             self.db.clear_table()
+            # list(song_datas)
         else:
             list(song_datas)
         self.logger.info('Скрипт завершил работу')

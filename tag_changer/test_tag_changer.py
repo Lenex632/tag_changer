@@ -6,11 +6,15 @@ from tag_changer import TagChanger
 from logger import set_up_logger_config
 
 
+# TODO добавить откат после тестов изменяющих данные файлов
 class TestTagChanger:
     @pytest.fixture(scope="class")
     def tag_changer(self):
         set_up_logger_config()
-        return TagChanger('C:\\code\\tag_changer\\test_tag_change', ['Legend'])
+        tc = TagChanger()
+        tc.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
+        tc.set_up_artist_dirs('Legend')
+        return tc
 
     def test_delete_numbers_with_artist(self, tag_changer):
         assert tag_changer.delete_numbers('12. Artist - Title') == 'Artist - Title'
@@ -136,11 +140,11 @@ class TestTagChanger:
         assert tag_changer.split_artist('Artist,Other2,Other3') == ('Artist', ['Other2', 'Other3'])
 
     def test_merge(self, tag_changer):
-        assert (tag_changer.merge('Title', ['Other2', 'Other3'], '(EN One Piece)')
+        assert (tag_changer.merge('Title', 'Other2, Other3', '(EN One Piece)')
                 == 'Title (feat. Other2, Other3) (EN One Piece)')
-        assert tag_changer.merge('Title', [], '') == 'Title'
-        assert tag_changer.merge('Title', ['Other2'], '') == 'Title (feat. Other2)'
-        assert tag_changer.merge('Title', [], '(EN One Piece)') == 'Title (EN One Piece)'
+        assert tag_changer.merge('Title', '', '') == 'Title'
+        assert tag_changer.merge('Title', 'Other2', '') == 'Title (feat. Other2)'
+        assert tag_changer.merge('Title', '', '(EN One Piece)') == 'Title (EN One Piece)'
 
     def test_get_file_info(self, tag_changer):
         input_data = [
@@ -164,7 +168,7 @@ class TestTagChanger:
                 title='Sirens',
                 artist='Saint Asonia',
                 album='Flawed Design',
-                feat=['Sharon den Adel'],
+                feat='Sharon den Adel',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\Saint Asonia\\Flawed Design\\Flawed Design.jpg')
             ),
@@ -173,7 +177,7 @@ class TestTagChanger:
                 title='Name1',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -182,7 +186,7 @@ class TestTagChanger:
                 title='Name2',
                 artist='test artist',
                 album='test_album_2',
-                feat=['artist'],
+                feat='artist',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -191,7 +195,7 @@ class TestTagChanger:
                 title='Name3',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -200,7 +204,7 @@ class TestTagChanger:
                 title='Name4',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='(OP1)',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -209,7 +213,7 @@ class TestTagChanger:
                 title='Name5',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -218,7 +222,7 @@ class TestTagChanger:
                 title='+-0',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -227,7 +231,7 @@ class TestTagChanger:
                 title='+-0',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -236,7 +240,7 @@ class TestTagChanger:
                 title='45',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -245,7 +249,7 @@ class TestTagChanger:
                 title='name w-o number',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -254,7 +258,7 @@ class TestTagChanger:
                 title='+-0',
                 artist='test artist',
                 album='test_album_2',
-                feat=[],
+                feat='',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\Legend\\test artist\\test_album_2\\test_album_2.jpg')
             ),
@@ -263,7 +267,7 @@ class TestTagChanger:
                 title='Dynamite',
                 artist='Taio Cruz',
                 album='The Best',
-                feat=['Some Artis', 'Some1', 'Some2'],
+                feat='Some Artis, Some1, Some2',
                 special='',
                 image=Path(f'{tag_changer.target_dir}\\The Best\\The Best.jpg')
             ),
@@ -272,7 +276,7 @@ class TestTagChanger:
                 title='RiGHT NOW',
                 artist='EMPiRE',
                 album='test album',
-                feat=[],
+                feat='',
                 special='(EN9)',
                 image=Path(f'{tag_changer.target_dir}\\The Best\\test album\\test album.jpg')
             )
@@ -299,3 +303,11 @@ class TestTagChanger:
         for i, (file_path, album) in enumerate(input_data):
             assert tag_changer.get_image(file_path, album) == output_results[i]
         tag_changer.delete_images(tag_changer.target_dir)  # TODO дописать тесты через вывод логов
+
+    def test_some(self):
+        s1 = ''
+        s2 = 'some, one'
+        s3 = 'some two'
+
+        assert ', '.join(list(i for i in (s1, s2, s3) if i)) == 'some, one, some two'
+        assert ', '.join(list(i for i in (s2, s1, s3) if i)) == 'some, one, some two'

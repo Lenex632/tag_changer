@@ -8,8 +8,8 @@ class SongData:
     title: str
     artist: str
     album: str
-    feat: list
-    special: str
+    feat: str | None = None
+    special: str | None = None
     image: Path | None = None
 
 

@@ -125,3 +125,22 @@ class MainButtons(QWidget):
 
         self.setLayout(layout)
 
+
+class FindDuplicatesButtons(QWidget):
+    def __init__(self, settings):
+        """Класс для работы с кнопками в главном окне"""
+        super().__init__()
+        self.settings = settings
+
+        self.readme_button = QPushButton('Открыть ReadMe')
+        self.start_button = QPushButton('Запуск   >>')
+
+        self.create_layout()
+
+    def create_layout(self):
+        """Создаёт виджет для размещения в окне"""
+        layout = QVBoxLayout()
+        layout.addWidget(self.readme_button)
+        layout.addWidget(self.start_button)
+
+        self.setLayout(layout)

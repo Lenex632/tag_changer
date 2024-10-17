@@ -6,7 +6,7 @@ import sys
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget
 
-from app.app_tabs import MainTab
+from app.app_tabs import MainTab, FinDuplicatesTab
 
 
 # TODO
@@ -91,7 +91,7 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.addTab(MainTab(self.settings), 'Изменение тегов')
         tabs.addTab(QWidget(), 'Добавление')
-        tabs.addTab(QWidget(), 'Поиск дубликатов')
+        tabs.addTab(FinDuplicatesTab(self.settings), 'Поиск дубликатов')
         tabs.addTab(QWidget(), 'Синхронизация')
 
         self.setCentralWidget(tabs)

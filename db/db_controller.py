@@ -55,13 +55,13 @@ class DBController:
         query = f'CREATE TABLE IF NOT EXISTS {self.table_name} ({table_columns})'
         self.execute(query)
 
-    def clear_table(self):
+    def clear_table(self) -> None:
         """Очищение таблицы от всех данных"""
         query = f'DELETE FROM {self.table_name}'
         self.execute(query)
         self.logger.info(f'"{self.table_name}" has been cleared')
 
-    def insert(self, song_data: SongData):
+    def insert(self, song_data: SongData) -> None:
         """Вставка значений song_data в таблицу"""
         # Подготовка значений, а то sqlite3 будет ругаться
         song_data.file_path = str(song_data.file_path)
@@ -77,7 +77,7 @@ class DBController:
 
         self.logger.debug(f'"{song_data.artist} - {song_data.title}" has been added to table "{self.table_name}"')
 
-    def delete(self, song_id: int):
+    def delete(self, song_id: int) -> None:
         """Удаление элемента по id"""
         query = f'DELETE FROM {self.table_name} WHERE song_id={song_id}'
         self.execute(query)
@@ -96,7 +96,7 @@ class DBController:
 
         return results
 
-    def update(self, condition: str, new: str):
+    def update(self, condition: str, new: str) -> None:
         """
         Нахождение элемента с condition (в формате 'song_id = 1') и обновление его
         параметров new (в формате 'title = "New Title"')
@@ -105,7 +105,7 @@ class DBController:
         self.logger.debug(f'Update table "{self.table_name}" where {condition} with new parameters {new}')
         self.execute(query)
 
-    def find_duplicates(self):
+    def find_duplicates(self) -> list[list[tuple]]:
         query = f'''
             SELECT title, artist, COUNT(*)
             FROM {self.table_name}
@@ -113,7 +113,7 @@ class DBController:
             HAVING COUNT(*) > 1;
         '''
         results = self.execute_and_fetch(query)
-        self.logger.info(f'{len(results)} duplicates was found in table "{self.table_name}"')
+        self.logger.info(f'{len(results)} groups of duplicates was found in table "{self.table_name}"')
 
         duplicates = []
         for res in results:
@@ -129,3 +129,20 @@ if __name__ == '__main__':
     set_up_logger_config()
 
     db = DBController()
+
+    with db:
+        db.create_table_if_not_exist()
+        dup = db.find_duplicates()
+
+    print(dup)
+    for group in dup:
+        print(f'{"":*^20}')
+        for s in group:
+            idx, *args = s
+            song = SongData(*args)
+            song.file_path = Path(song.file_path)
+            song.image = Path(song.image) if song.image else None
+            print(song.title, song.artist, song.album)
+            print(song.file_path)
+
+

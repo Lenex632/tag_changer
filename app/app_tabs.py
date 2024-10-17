@@ -1,11 +1,13 @@
 import logging
+from pathlib import Path
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
-from tag_changer.tag_changer import TagChanger
+from app.app_wigets import Directories, DirWidget, ArtistDirsWidget, MainButtons, FindDuplicatesButtons
 from db.db_controller import DBController
-from app.app_wigets import Directories, DirWidget, ArtistDirsWidget, MainButtons
+from model import SongData
+from tag_changer.tag_changer import TagChanger
 
 
 class MainTab(QWidget):
@@ -93,22 +95,41 @@ class MainTab(QWidget):
 
 
 class FinDuplicatesTab(QWidget):
+    """
+    Виджеты: кнопки; подсказки с тем, заполнена библиотека или нет
+    Кнопки: readme, старт
+    Ограничения: не должен изменять теги, просто искать дубликаты в уже заполненной библиотеке
+    Функционал: нажимаешь на кнопку старта -> показывается список с дубликатами, го можно скролить, дубликаты можно
+                выбирать и проставлять метки '+' или '-', по умолчанию '+'. В окне кнопки 'применить' и 'отменить'.
+                После 'применить' все с '+' - остаются, все с '-' - удаляются с диска. Пути ищутся исходя из заданной
+                target_dir и найденных относительных путей файлов.
+
+    МБ:
+        Искать не в заполненной библиотеке, а в папке, но просто проходится по ней аналогом tag_changer, который будет
+        просто сканировать папку и записывать теги песен в бд.
+    """
     def __init__(self, settings):
         """Класс главного окна"""
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
+        self.duplicates = None
 
         self.db = DBController()
         with self.db:
             self.db.create_table_if_not_exist()
 
         # Создание виджетов и макета для их размещения
+        self.find_duplicates_buttons_widget = FindDuplicatesButtons(self.settings)
         self.main_layout = QVBoxLayout()
         self.set_up_layout()
 
     def set_up_layout(self):
         """Настройка кнопок и макета"""
+        self.find_duplicates_buttons_widget.readme_button.clicked.connect(self.open_readme)
+        self.find_duplicates_buttons_widget.start_button.clicked.connect(self.start)
+
+        self.main_layout.addWidget(self.find_duplicates_buttons_widget)
         self.setLayout(self.main_layout)
 
     def open_readme(self):
@@ -124,9 +145,20 @@ class FinDuplicatesTab(QWidget):
 
     def start(self):
         """Запуск скрипта"""
-        target_dir = self.target_dir_widget.fild.toPlainText()
-
         self.logger.info('Запуск скрипта')
+
+        with self.db:
+            dup = self.db.find_duplicates()
+
+        for group in dup:
+            print(f'{"":*^20}')
+            for s in group:
+                idx, *args = s
+                song = SongData(*args)
+                song.file_path = Path(song.file_path)
+                song.image = Path(song.image) if song.image else None
+                print(song.title, song.artist, song.album)
+                print(song.file_path)
 
         self.show_finish_dialog()
         self.logger.info('Скрипт завершил работу')

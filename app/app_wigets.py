@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QTextEdit,
     QCheckBox,
+    QListWidget, QFrame, QListWidgetItem, QScrollArea, QTreeWidgetItem, QTreeWidget, QTreeWidgetItemIterator
 )
 
 
@@ -101,11 +102,9 @@ class ArtistDirsWidget(QWidget):
 
 
 class MainButtons(QWidget):
-    def __init__(self, settings):
+    def __init__(self):
         """Класс для работы с кнопками в главном окне"""
         super().__init__()
-        self.settings = settings
-
         self.db_update_checkbox = QCheckBox('Обновить базу данных основываясь на обработанных данных')
         self.readme_button = QPushButton('Открыть ReadMe')
         self.reset_settings_button = QPushButton('Сбросить настройки')
@@ -127,11 +126,9 @@ class MainButtons(QWidget):
 
 
 class FindDuplicatesButtons(QWidget):
-    def __init__(self, settings):
-        """Класс для работы с кнопками в главном окне"""
+    def __init__(self):
+        """Класс для работы с кнопками в окне поиска дубликатов"""
         super().__init__()
-        self.settings = settings
-
         self.readme_button = QPushButton('Открыть ReadMe')
         self.start_button = QPushButton('Запуск   >>')
 
@@ -142,5 +139,42 @@ class FindDuplicatesButtons(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.readme_button)
         layout.addWidget(self.start_button)
+
+        self.setLayout(layout)
+
+
+class FindDuplicatesResults(QWidget):
+    def __init__(self, target_dir, duplicates):
+        """Класс для работы с результатами поиска дубликатов"""
+        super().__init__()
+        self.duplicates_list = QListWidget()
+        self.duplicates = duplicates
+
+        for title, artist, group in duplicates:
+            for s in group:
+                idx, file_path, *_ = s
+                self.duplicates_list.addItem(file_path)
+
+        self.create_layout()
+
+    def create_layout(self):
+        """Создаёт виджет для размещения в окне"""
+        layout = QVBoxLayout()
+        test = QTreeWidget()
+        test.setHeaderHidden(True)
+        items = []
+
+        for title, artist, group in self.duplicates:
+            item = QTreeWidgetItem()
+            item.setText(0, f'{title} - {artist}')
+            for s in group:
+                idx, file_path, *_ = s
+                i = QTreeWidgetItem()
+                i.setText(0, file_path)
+                item.addChild(i)
+            items.append(item)
+        test.addTopLevelItems(items)
+        test.expandAll()
+        layout.addWidget(test)
 
         self.setLayout(layout)

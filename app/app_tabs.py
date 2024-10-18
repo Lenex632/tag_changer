@@ -1,10 +1,17 @@
 import logging
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QDialog
 
-from app.app_wigets import Directories, DirWidget, ArtistDirsWidget, MainButtons, FindDuplicatesButtons
+from app.app_wigets import (
+    Directories,
+    DirWidget,
+    ArtistDirsWidget,
+    MainButtons,
+    FindDuplicatesButtons,
+    FindDuplicatesResults,
+)
 from db.db_controller import DBController
 from model import SongData
 from tag_changer.tag_changer import TagChanger
@@ -26,7 +33,7 @@ class MainTab(QWidget):
         # Создание виджетов и макета для их размещения
         self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
         self.artist_dirs_widget = ArtistDirsWidget(self.settings)
-        self.main_button_widget = MainButtons(self.settings)
+        self.main_button_widget = MainButtons()
         self.main_layout = QVBoxLayout()
         self.set_up_layout()
 
@@ -120,7 +127,7 @@ class FinDuplicatesTab(QWidget):
             self.db.create_table_if_not_exist()
 
         # Создание виджетов и макета для их размещения
-        self.find_duplicates_buttons_widget = FindDuplicatesButtons(self.settings)
+        self.find_duplicates_buttons_widget = FindDuplicatesButtons()
         self.main_layout = QVBoxLayout()
         self.set_up_layout()
 
@@ -139,8 +146,17 @@ class FinDuplicatesTab(QWidget):
 
     def show_finish_dialog(self):
         dlg = QMessageBox(self)
-        dlg.setWindowTitle('Tag Changer')
-        dlg.setText('Скрипт завершил работу')
+        dlg.setWindowTitle('Результаты')
+        dlg.setText('Поиск дубликатов завершён')
+        dlg.exec()
+
+    def show_results(self, duplicates):
+        dlg = QDialog(self)
+        dlg.setFixedSize(QSize(800, 500))
+        dlg.setWindowTitle('Результаты')
+        layout = QVBoxLayout()
+        layout.addWidget(FindDuplicatesResults(self.settings.target_dir, duplicates))
+        dlg.setLayout(layout)
         dlg.exec()
 
     def start(self):
@@ -150,15 +166,5 @@ class FinDuplicatesTab(QWidget):
         with self.db:
             dup = self.db.find_duplicates()
 
-        for group in dup:
-            print(f'{"":*^20}')
-            for s in group:
-                idx, *args = s
-                song = SongData(*args)
-                song.file_path = Path(song.file_path)
-                song.image = Path(song.image) if song.image else None
-                print(song.title, song.artist, song.album)
-                print(song.file_path)
-
-        self.show_finish_dialog()
+        self.show_results(dup)
         self.logger.info('Скрипт завершил работу')

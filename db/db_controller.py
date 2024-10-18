@@ -7,7 +7,7 @@ from model import SongData, TableModel
 
 # TODO инициализировать базу надо вручную
 class DBController:
-    def __init__(self, db_name: str = 'music.db', table_name: str = 'music') -> None:
+    def __init__(self, db_name: str = 'music.db') -> None:
         """
         Класс управления базой данных.
         Операции будут проводиться с помощью контекстного менеджера.
@@ -15,7 +15,8 @@ class DBController:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.db_name = db_name
         self.db_path = Path(Path(__file__).parent, self.db_name)
-        self.table_name = table_name
+        self.main_table = 'main'
+        self.sync_table = 'sync'
         self.table_model = TableModel().__dict__
 
     def __enter__(self) -> "DBController":
@@ -50,16 +51,16 @@ class DBController:
         return result
 
     def create_table_if_not_exist(self) -> None:
-        """Создаёт базу данных и таблицу self.table_name, если такие не существуют"""
+        """Создаёт базу данных и таблицу self.main_table, если такие не существуют"""
         table_columns = f'{", ".join(f"{key} {value}" for key, value in self.table_model.items())}'
-        query = f'CREATE TABLE IF NOT EXISTS {self.table_name} ({table_columns})'
+        query = f'CREATE TABLE IF NOT EXISTS {self.main_table} ({table_columns})'
         self.execute(query)
 
     def clear_table(self) -> None:
         """Очищение таблицы от всех данных"""
-        query = f'DELETE FROM {self.table_name}'
+        query = f'DELETE FROM {self.main_table}'
         self.execute(query)
-        self.logger.info(f'"{self.table_name}" has been cleared')
+        self.logger.info(f'"{self.main_table}" has been cleared')
 
     def insert(self, song_data: SongData) -> None:
         """Вставка значений song_data в таблицу"""
@@ -72,27 +73,27 @@ class DBController:
         keys = f'{", ".join(f"{key}" for key in song_data.__dict__.keys())}'
         values = list(song_data.__dict__.values())
 
-        query = f'INSERT INTO {self.table_name} ({keys}) VALUES ({", ".join("?" for _ in values)})'
+        query = f'INSERT INTO {self.main_table} ({keys}) VALUES ({", ".join("?" for _ in values)})'
         self.execute(query, params=values)
 
-        self.logger.debug(f'"{song_data.artist} - {song_data.title}" has been added to table "{self.table_name}"')
+        self.logger.debug(f'"{song_data.artist} - {song_data.title}" has been added to table "{self.main_table}"')
 
     def delete(self, song_id: int) -> None:
         """Удаление элемента по id"""
-        query = f'DELETE FROM {self.table_name} WHERE song_id={song_id}'
+        query = f'DELETE FROM {self.main_table} WHERE song_id={song_id}'
         self.execute(query)
-        self.logger.debug(f'Song with id={song_id} has been deleted from table "{self.table_name}"')
+        self.logger.debug(f'Song with id={song_id} has been deleted from table "{self.main_table}"')
 
     def find(self, condition: str = None) -> list:
         """
         Нахождение элементов по condition (в формате 'song_id = 1'), либо вообще всей таблички, если condition=None
         """
         if condition:
-            query = f'SELECT * FROM {self.table_name} WHERE {condition}'
+            query = f'SELECT * FROM {self.main_table} WHERE {condition}'
         else:
-            query = f'SELECT * FROM {self.table_name}'
+            query = f'SELECT * FROM {self.main_table}'
         results = self.execute_and_fetch(query)
-        self.logger.info(f'{len(results)} rows was found in table "{self.table_name}" for {condition=}')
+        self.logger.info(f'{len(results)} rows was found in table "{self.main_table}" for {condition=}')
 
         return results
 
@@ -101,25 +102,27 @@ class DBController:
         Нахождение элемента с condition (в формате 'song_id = 1') и обновление его
         параметров new (в формате 'title = "New Title"')
         """
-        query = f'UPDATE {self.table_name} SET {new} WHERE {condition}'
-        self.logger.debug(f'Update table "{self.table_name}" where {condition} with new parameters {new}')
+        query = f'UPDATE {self.main_table} SET {new} WHERE {condition}'
+        self.logger.debug(f'Update table "{self.main_table}" where {condition} with new parameters {new}')
         self.execute(query)
 
-    def find_duplicates(self) -> list[list[tuple]]:
+    def find_duplicates(self) -> list[tuple]:
         query = f'''
             SELECT title, artist, COUNT(*)
-            FROM {self.table_name}
+            FROM {self.main_table}
             GROUP BY artist, title
             HAVING COUNT(*) > 1;
         '''
         results = self.execute_and_fetch(query)
-        self.logger.info(f'{len(results)} groups of duplicates was found in table "{self.table_name}"')
+        self.logger.info(f'{len(results)} groups of duplicates was found in table "{self.main_table}"')
 
         duplicates = []
         for res in results:
-            condition = f'title = "{res[0]}" AND artist = "{res[1]}"'
+            title = res[0]
+            artist = res[1]
+            condition = f'title = "{title}" AND artist = "{artist}"'
             duplicate = self.find(condition)
-            duplicates.append(duplicate)
+            duplicates.append((title, artist, duplicate))
 
         return duplicates
 
@@ -134,15 +137,11 @@ if __name__ == '__main__':
         db.create_table_if_not_exist()
         dup = db.find_duplicates()
 
-    print(dup)
-    for group in dup:
+    for title, artist, group in dup:
+        print(title, artist)
         print(f'{"":*^20}')
         for s in group:
-            idx, *args = s
-            song = SongData(*args)
-            song.file_path = Path(song.file_path)
-            song.image = Path(song.image) if song.image else None
-            print(song.title, song.artist, song.album)
-            print(song.file_path)
+            idx, file_path, *_ = s
+            print(file_path)
 
 

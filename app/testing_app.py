@@ -6,7 +6,7 @@ import sys
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget
 
-from app.app_tabs import MainTab, FinDuplicatesTab
+from app_tabs import MainTab, FinDuplicatesTab
 
 
 # TODO
@@ -14,6 +14,7 @@ from app.app_tabs import MainTab, FinDuplicatesTab
 #     "Добавление" - Есть папка from_dir, есть папка to_dir. Обрабатывать from_dir -> копировать в to_dir (либо просто
 #     копировать) -> обновлять бд (либо обновлять прямо во время копирования). Возможно сделать просто как галочку с
 #     возможностью выбрать from_dir. После завершения копирования - очищать from_dir, но не трогать структуру
+#     Сделать всё доступным из __init__
 class Settings:
     def __init__(self):
         """Класс для работы с файлом настроек и конфигураций"""

@@ -12,9 +12,9 @@ from app_wigets import (
     FindDuplicatesButtons,
     FindDuplicatesResults,
 )
-from db.db_controller import DBController
+from db import (DBController)
 from model import SongData
-from tag_changer.tag_changer import TagChanger
+from tag_changer import TagChanger
 
 
 class MainTab(QWidget):
@@ -101,19 +101,15 @@ class MainTab(QWidget):
         self.logger.info('Скрипт завершил работу')
 
 
-class FinDuplicatesTab(QWidget):
+class FindDuplicatesTab(QWidget):
     """
     Виджеты: кнопки; подсказки с тем, заполнена библиотека или нет
     Кнопки: readme, старт
     Ограничения: не должен изменять теги, просто искать дубликаты в уже заполненной библиотеке
-    Функционал: нажимаешь на кнопку старта -> показывается список с дубликатами, го можно скролить, дубликаты можно
-                выбирать и проставлять метки '+' или '-', по умолчанию '+'. В окне кнопки 'применить' и 'отменить'.
-                После 'применить' все с '+' - остаются, все с '-' - удаляются с диска. Пути ищутся исходя из заданной
-                target_dir и найденных относительных путей файлов.
-
-    МБ:
-        Искать не в заполненной библиотеке, а в папке, но просто проходится по ней аналогом tag_changer, который будет
-        просто сканировать папку и записывать теги песен в бд.
+    Функционал: нажимаешь на кнопку старта -> показывается список с дубликатами, его можно скролить, дубликаты можно
+                выбирать. В окне кнопки 'применить' и 'отменить'. После 'применить' все непомеченные - остаются,
+                помеченные - удаляются с диска. Пути ищутся исходя из заданной target_dir и найденных относительных
+                путей файлов.
     """
     def __init__(self, settings):
         """Класс главного окна"""
@@ -154,8 +150,11 @@ class FinDuplicatesTab(QWidget):
         dlg = QDialog(self)
         dlg.setFixedSize(QSize(800, 500))
         dlg.setWindowTitle('Результаты')
+
         layout = QVBoxLayout()
-        layout.addWidget(FindDuplicatesResults(self.settings.target_dir, duplicates))
+        duplicates_widget = FindDuplicatesResults(self.settings.target_dir, duplicates)
+        layout.addWidget(duplicates_widget)
+
         dlg.setLayout(layout)
         dlg.exec()
 

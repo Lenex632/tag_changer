@@ -4,7 +4,7 @@ import re
 
 import eyed3
 
-from db.db_controller import DBController
+from db import DBController
 from model import SongData
 
 

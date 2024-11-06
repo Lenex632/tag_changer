@@ -137,11 +137,9 @@ if __name__ == '__main__':
         db.create_table_if_not_exist()
         dup = db.find_duplicates()
 
-    for title, artist, group in dup:
-        print(title, artist)
+    for t, a, g in dup:
+        print(t, a)
         print(f'{"":*^20}')
-        for s in group:
+        for s in g:
             idx, file_path, *_ = s
             print(file_path)
-
-

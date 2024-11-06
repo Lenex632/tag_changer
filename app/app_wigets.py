@@ -1,5 +1,6 @@
 from enum import Enum
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
     QLabel,
@@ -10,7 +11,8 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QTextEdit,
     QCheckBox,
-    QListWidget, QFrame, QListWidgetItem, QScrollArea, QTreeWidgetItem, QTreeWidget, QTreeWidgetItemIterator
+    QTreeWidgetItem,
+    QTreeWidget
 )
 
 
@@ -147,34 +149,35 @@ class FindDuplicatesResults(QWidget):
     def __init__(self, target_dir, duplicates):
         """Класс для работы с результатами поиска дубликатов"""
         super().__init__()
-        self.duplicates_list = QListWidget()
         self.duplicates = duplicates
-
-        for title, artist, group in duplicates:
-            for s in group:
-                idx, file_path, *_ = s
-                self.duplicates_list.addItem(file_path)
+        self.duplicate_tree = QTreeWidget()
+        self.ok_button = QPushButton('OK')
+        self.cansel_button = QPushButton('Отмена')
 
         self.create_layout()
 
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
         layout = QVBoxLayout()
-        test = QTreeWidget()
-        test.setHeaderHidden(True)
-        items = []
 
+        self.duplicate_tree.setHeaderHidden(True)
         for title, artist, group in self.duplicates:
-            item = QTreeWidgetItem()
+            item = QTreeWidgetItem(self.duplicate_tree)
             item.setText(0, f'{title} - {artist}')
+            item.setCheckState(0, Qt.CheckState.Unchecked)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsAutoTristate | Qt.ItemFlag.ItemIsUserCheckable)
             for s in group:
                 idx, file_path, *_ = s
-                i = QTreeWidgetItem()
+                i = QTreeWidgetItem(item)
+                i.setFlags(i.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 i.setText(0, file_path)
-                item.addChild(i)
-            items.append(item)
-        test.addTopLevelItems(items)
-        test.expandAll()
-        layout.addWidget(test)
+                i.setCheckState(0, Qt.CheckState.Unchecked)
+        self.duplicate_tree.expandAll()
+        layout.addWidget(self.duplicate_tree)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.ok_button)
+        button_layout.addWidget(self.cansel_button)
+        layout.addLayout(button_layout)
 
         self.setLayout(layout)

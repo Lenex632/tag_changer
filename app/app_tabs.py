@@ -12,7 +12,7 @@ from app_wigets import (
     FindDuplicatesButtons,
     FindDuplicatesResults,
 )
-from db import (DBController)
+from db import DBController
 from model import SongData
 from tag_changer import TagChanger
 
@@ -35,9 +35,9 @@ class MainTab(QWidget):
         self.artist_dirs_widget = ArtistDirsWidget(self.settings)
         self.main_button_widget = MainButtons()
         self.main_layout = QVBoxLayout()
-        self.set_up_layout()
+        self.create_layout()
 
-    def set_up_layout(self):
+    def create_layout(self):
         """Настройка кнопок и макета"""
         self.main_button_widget.readme_button.clicked.connect(self.open_readme)
         self.main_button_widget.reset_settings_button.clicked.connect(self.reset_settings)
@@ -125,9 +125,9 @@ class FindDuplicatesTab(QWidget):
         # Создание виджетов и макета для их размещения
         self.find_duplicates_buttons_widget = FindDuplicatesButtons()
         self.main_layout = QVBoxLayout()
-        self.set_up_layout()
+        self.create_layout()
 
-    def set_up_layout(self):
+    def create_layout(self):
         """Настройка кнопок и макета"""
         self.find_duplicates_buttons_widget.readme_button.clicked.connect(self.open_readme)
         self.find_duplicates_buttons_widget.start_button.clicked.connect(self.start)
@@ -147,15 +147,7 @@ class FindDuplicatesTab(QWidget):
         dlg.exec()
 
     def show_results(self, duplicates):
-        dlg = QDialog(self)
-        dlg.setFixedSize(QSize(800, 500))
-        dlg.setWindowTitle('Результаты')
-
-        layout = QVBoxLayout()
-        duplicates_widget = FindDuplicatesResults(self.settings.target_dir, duplicates)
-        layout.addWidget(duplicates_widget)
-
-        dlg.setLayout(layout)
+        dlg = FindDuplicatesDialog(self.settings, duplicates)
         dlg.exec()
 
     def start(self):
@@ -167,3 +159,33 @@ class FindDuplicatesTab(QWidget):
 
         self.show_results(dup)
         self.logger.info('Скрипт завершил работу')
+
+
+class FindDuplicatesDialog(QDialog):
+    def __init__(self, settings, duplicates: list | tuple):
+        super().__init__()
+        self.logger = logging.getLogger('App')
+        self.settings = settings
+        self.duplicates = duplicates
+        self.setFixedSize(QSize(800, 500))
+        self.setWindowTitle('Результаты')
+
+        self.main_layout = QVBoxLayout()
+        self.duplicates_widget = FindDuplicatesResults(self.duplicates)
+
+        self.create_layout()
+
+    def create_layout(self):
+        self.main_layout.addWidget(self.duplicates_widget)
+        self.duplicates_widget.ok_button.clicked.connect(self.click_ok)
+        self.duplicates_widget.cansel_button.clicked.connect(self.click_cansel)
+
+        self.setLayout(self.main_layout)
+
+    def click_ok(self):
+        self.logger.debug('Применить изменения дубликатов')
+        self.close()
+
+    def click_cansel(self):
+        self.logger.debug('Отменить изменения дубликатов')
+        self.close()

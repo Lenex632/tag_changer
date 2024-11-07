@@ -146,7 +146,7 @@ class FindDuplicatesButtons(QWidget):
 
 
 class FindDuplicatesResults(QWidget):
-    def __init__(self, target_dir, duplicates):
+    def __init__(self, duplicates):
         """Класс для работы с результатами поиска дубликатов"""
         super().__init__()
         self.duplicates = duplicates
@@ -181,3 +181,6 @@ class FindDuplicatesResults(QWidget):
         layout.addLayout(button_layout)
 
         self.setLayout(layout)
+
+    def get_items_for_delete(self):
+        pass

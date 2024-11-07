@@ -15,9 +15,6 @@ from app import MainTab, FindDuplicatesTab
 #     копировать) -> обновлять бд (либо обновлять прямо во время копирования). Возможно сделать просто как галочку с
 #     возможностью выбрать from_dir. После завершения копирования - очищать from_dir, но не трогать структуру
 #       Next:
-#               Перенести в main
-#               Обновить README.md
-#               Обновить settings, что бы он создавался автоматически при первом запуске программы
 #               "Добавление": создать таб, создать виджет
 #               "Синхронизация"
 #               Добавить возможность добавлять и удалять библиотеки (таблицы в бд)
@@ -26,8 +23,9 @@ class Settings:
         """Класс для работы с файлом настроек и конфигураций"""
         self._settings = configparser.ConfigParser()
         self.path = Path(Path(__file__).parent, 'settings.ini')
-        if self.path:
-            self._settings.read(self.path)
+        if not self.path.exists():
+            self.path.touch()
+        self._settings.read(self.path)
 
         self.target_dir = None
         self.artist_dirs = None
@@ -37,6 +35,9 @@ class Settings:
 
     def set_defaults(self) -> None:
         """Настраивает дефолтные значения из settings.ini при запуске программы"""
+        if not self._settings.has_section('main'):
+            self._settings.add_section('main')
+
         self.target_dir = self._settings.get(section='main', option='target_dir', fallback=None)
         self.artist_dirs = self._settings.get(section='main', option='artist_dirs', fallback='').split('\n')
         self.sync_dir = self._settings.get(section='settings', option='sync_dir', fallback='')

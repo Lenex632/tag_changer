@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QDialog
 
-from app_wigets import (
+from .app_wigets import (
     Directories,
     DirWidget,
     ArtistDirsWidget,

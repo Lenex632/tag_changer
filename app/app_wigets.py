@@ -151,7 +151,7 @@ class FindDuplicatesResults(QWidget):
         super().__init__()
         self.duplicates = duplicates
         self.duplicate_tree = QTreeWidget()
-        self.ok_button = QPushButton('OK')
+        self.ok_button = QPushButton('Применить')
         self.cansel_button = QPushButton('Отмена')
 
         self.create_layout()

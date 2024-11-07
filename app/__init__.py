@@ -1,5 +1,5 @@
-from app_tabs import MainTab, FindDuplicatesTab
-from app_wigets import (
+from app.app_tabs import MainTab, FindDuplicatesTab
+from app.app_wigets import (
     Directories,
     DirWidget,
     ArtistDirsWidget,

@@ -13,7 +13,6 @@ from app_wigets import (
     FindDuplicatesResults,
 )
 from db import DBController
-from model import SongData
 from tag_changer import TagChanger
 
 
@@ -147,7 +146,7 @@ class FindDuplicatesTab(QWidget):
         dlg.exec()
 
     def show_results(self, duplicates):
-        dlg = FindDuplicatesDialog(self.settings, duplicates)
+        dlg = FindDuplicatesDialog(self.settings, self.db, duplicates)
         dlg.exec()
 
     def start(self):
@@ -162,11 +161,13 @@ class FindDuplicatesTab(QWidget):
 
 
 class FindDuplicatesDialog(QDialog):
-    def __init__(self, settings, duplicates: list | tuple):
+    def __init__(self, settings, db, duplicates: list | tuple):
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
         self.duplicates = duplicates
+        self.db = db
+
         self.setFixedSize(QSize(800, 500))
         self.setWindowTitle('Результаты')
 
@@ -184,6 +185,12 @@ class FindDuplicatesDialog(QDialog):
 
     def click_ok(self):
         self.logger.debug('Применить изменения дубликатов')
+        items = self.duplicates_widget.get_items_for_delete()
+        with self.db:
+            for idx, file_path in items:
+                self.db.delete(idx)
+                full_path = Path(self.settings.target_dir, file_path)
+                full_path.unlink(missing_ok=True)
         self.close()
 
     def click_cansel(self):

@@ -162,16 +162,17 @@ class FindDuplicatesResults(QWidget):
 
         self.duplicate_tree.setHeaderHidden(True)
         for title, artist, group in self.duplicates:
-            item = QTreeWidgetItem(self.duplicate_tree)
-            item.setText(0, f'{title} - {artist}')
-            item.setCheckState(0, Qt.CheckState.Unchecked)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsAutoTristate | Qt.ItemFlag.ItemIsUserCheckable)
+            parent = QTreeWidgetItem(self.duplicate_tree)
+            parent.setText(0, f'{title} - {artist}')
+            parent.setCheckState(0, Qt.CheckState.Unchecked)
+            parent.setFlags(parent.flags() | Qt.ItemFlag.ItemIsAutoTristate | Qt.ItemFlag.ItemIsUserCheckable)
             for s in group:
                 idx, file_path, *_ = s
-                i = QTreeWidgetItem(item)
-                i.setFlags(i.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-                i.setText(0, file_path)
-                i.setCheckState(0, Qt.CheckState.Unchecked)
+                child = QTreeWidgetItem(parent)
+                child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                child.setText(0, file_path)
+                child.setCheckState(0, Qt.CheckState.Unchecked)
+                child.setData(0, Qt.ItemDataRole.UserRole, idx)
         self.duplicate_tree.expandAll()
         layout.addWidget(self.duplicate_tree)
 
@@ -183,4 +184,13 @@ class FindDuplicatesResults(QWidget):
         self.setLayout(layout)
 
     def get_items_for_delete(self):
-        pass
+        items = []
+
+        for top_idx in range(self.duplicate_tree.topLevelItemCount()):
+            parent = self.duplicate_tree.topLevelItem(top_idx)
+            for idx in range(parent.childCount()):
+                child = parent.child(idx)
+                if child.checkState(0) is Qt.CheckState.Checked:
+                    items.append((child.data(0, Qt.ItemDataRole.UserRole), child.text(0)))
+
+        return items

@@ -1,4 +1,4 @@
-from app.app_tabs import MainTab, FindDuplicatesTab, AddingTab
+from app.app_tabs import MainTab, FindDuplicatesTab, ExpansionTab
 from app.app_wigets import (
     Directories,
     DirWidget,
@@ -6,6 +6,6 @@ from app.app_wigets import (
     MainButtons,
     FindDuplicatesButtons,
     FindDuplicatesResults,
-    AddingButtons,
+    ExpansionButtons,
     LibrariesWidget,
 )

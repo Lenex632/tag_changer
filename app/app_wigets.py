@@ -199,7 +199,7 @@ class FindDuplicatesResults(QWidget):
         return items
 
 
-class AddingButtons(QWidget):
+class ExpansionButtons(QWidget):
     def __init__(self):
         super().__init__()
 

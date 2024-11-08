@@ -12,7 +12,8 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QCheckBox,
     QTreeWidgetItem,
-    QTreeWidget
+    QTreeWidget,
+    QComboBox,
 )
 
 
@@ -107,6 +108,7 @@ class MainButtons(QWidget):
     def __init__(self):
         """Класс для работы с кнопками в главном окне"""
         super().__init__()
+        self.library_chose_box = QComboBox()
         self.db_update_checkbox = QCheckBox('Обновить базу данных основываясь на обработанных данных')
         self.readme_button = QPushButton('Открыть ReadMe')
         self.reset_settings_button = QPushButton('Сбросить настройки')
@@ -117,8 +119,11 @@ class MainButtons(QWidget):
 
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
+        self.library_chose_box.addItems(['one', 'two', 'three'])
+
         layout = QGridLayout()
-        layout.addWidget(self.db_update_checkbox, 0, 0, 1, 2)
+        layout.addWidget(self.library_chose_box, 0, 0)
+        layout.addWidget(self.db_update_checkbox, 0, 1, 1, 2)
         layout.addWidget(self.readme_button, 1, 0)
         layout.addWidget(self.reset_settings_button, 2, 0)
         layout.addWidget(self.save_settings_button, 2, 1)

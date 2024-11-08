@@ -50,17 +50,30 @@ class DBController:
 
         return result
 
-    def create_table_if_not_exist(self) -> None:
-        """Создаёт базу данных и таблицу self.main_table, если такие не существуют"""
+    def create_table_if_not_exist(self, table: str = 'main') -> None:
+        """Создаёт базу данных и таблицу table, если такие не существуют"""
         table_columns = f'{", ".join(f"{key} {value}" for key, value in self.table_model.items())}'
-        query = f'CREATE TABLE IF NOT EXISTS {self.main_table} ({table_columns})'
+        query = f'CREATE TABLE IF NOT EXISTS {table} ({table_columns})'
         self.execute(query)
+
+    def get_tables_list(self) -> list | tuple:
+        query = 'SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"'
+        result = self.execute_and_fetch(query)
+        result = list(map(lambda x: x[0], result))
+
+        return result
 
     def clear_table(self) -> None:
         """Очищение таблицы от всех данных"""
         query = f'DELETE FROM {self.main_table}'
         self.execute(query)
         self.logger.info(f'"{self.main_table}" has been cleared')
+
+    def drop_table(self, table) -> None:
+        """Удаляет выбранную таблицу"""
+        query = f'DROP TABLE {table}'
+        self.execute(query)
+        self.logger.info(f'"{table}" has been deleted')
 
     def insert(self, song_data: SongData) -> None:
         """Вставка значений song_data в таблицу"""

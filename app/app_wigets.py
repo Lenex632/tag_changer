@@ -119,8 +119,6 @@ class MainButtons(QWidget):
 
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
-        self.library_chose_box.addItems(['one', 'two', 'three'])
-
         layout = QGridLayout()
         layout.addWidget(self.library_chose_box, 0, 0)
         layout.addWidget(self.db_update_checkbox, 0, 1, 1, 2)
@@ -199,3 +197,40 @@ class FindDuplicatesResults(QWidget):
                     items.append((child.data(0, Qt.ItemDataRole.UserRole), child.text(0)))
 
         return items
+
+
+class AddingButtons(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.readme_button = QPushButton('Открыть ReadMe')
+        self.start_button = QPushButton('Запуск   >>')
+
+        self.create_layout()
+
+    def create_layout(self):
+        """Создаёт виджет для размещения в окне"""
+        layout = QHBoxLayout()
+        layout.addWidget(self.readme_button)
+        layout.addWidget(self.start_button)
+
+        self.setLayout(layout)
+
+
+class LibrariesWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.libraries_list = QComboBox()
+        self.add_library_button = QPushButton('+')
+        self.remove_library_button = QPushButton('-')
+
+        self.create_layout()
+
+    def create_layout(self):
+        layout = QHBoxLayout()
+        layout.addWidget(self.libraries_list)
+        layout.addWidget(self.add_library_button)
+        layout.addWidget(self.remove_library_button)
+
+        self.setLayout(layout)

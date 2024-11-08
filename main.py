@@ -6,7 +6,8 @@ import sys
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget
 
-from app import MainTab, FindDuplicatesTab
+from app import MainTab, FindDuplicatesTab, AddingTab
+from db import DBController
 
 
 # TODO
@@ -29,6 +30,8 @@ class Settings:
 
         self.target_dir = None
         self.artist_dirs = None
+        self.to_dir = None
+        self.from_dir = None
         self.sync_dir = None
         self.target_sync_dir = None
         self.set_defaults()
@@ -42,6 +45,8 @@ class Settings:
         self.artist_dirs = self._settings.get(section='main', option='artist_dirs', fallback='').split('\n')
         self.sync_dir = self._settings.get(section='settings', option='sync_dir', fallback='')
         self.target_sync_dir = self._settings.get(section='settings', option='sync_dir', fallback='')
+        self.to_dir = ''
+        self.from_dir = ''
 
     def set_target_dir(self, value) -> None:
         """Настраивает значение target_dir"""
@@ -88,6 +93,7 @@ class MainWindow(QMainWindow):
 
         self.logger = logging.getLogger('App')
         self.settings = Settings()
+        self.db = DBController()
         self.set_window_parameters()
 
     def set_window_parameters(self):
@@ -98,7 +104,7 @@ class MainWindow(QMainWindow):
         # Создание и размещение вкладок
         tabs = QTabWidget()
         tabs.addTab(MainTab(self.settings), 'Изменение тегов')
-        tabs.addTab(QWidget(), 'Добавление')
+        tabs.addTab(AddingTab(self.settings, self.db), 'Добавление')
         tabs.addTab(FindDuplicatesTab(self.settings), 'Поиск дубликатов')
         tabs.addTab(QWidget(), 'Синхронизация')
 

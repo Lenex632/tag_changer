@@ -62,7 +62,7 @@ class TagChanger:
 
         return artist, feat
 
-    # TODO мб добавить '&'
+    # TODO мб добавить '&' (Artist & OtherArtist - Title)
     def find_feats(self, target: str) -> [str, list[str]]:
         """Поиск соисполнителей в title и в artist"""
         feat = []
@@ -185,6 +185,7 @@ class TagChanger:
             # песни в исполнителе без альбома (создаётся папка с альбомом)
             try:
                 album = song.tag.album
+            # TODO иногда не отлавливается даже AttributeError либо что-то ещё из-за чего альбом не пробрасывается
             except AttributeError:
                 album = 'Without Album'
             album_dir = Path(file_path.parent, album)

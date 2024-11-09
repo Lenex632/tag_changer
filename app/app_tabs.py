@@ -7,10 +7,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QMessageBox,
     QDialog,
-    QPushButton,
     QInputDialog,
-    QGridLayout,
-    QComboBox,
 )
 
 from .app_wigets import (
@@ -214,8 +211,8 @@ class FindDuplicatesDialog(QDialog):
 
 class ExpansionTab(QWidget):
     """
-    Запуск не должен работать, если не заполнены все данные.
-    Не сохранять никаких настроек.
+    СНАЧАЛА НАСТРОИТЬ СПОСОБЫ СМЕНЫ БИБЛИОТЕКИ
+
     Запуск -> запускает TagChanger по from_dir -> записывает данные в library -> копирует (либо вырезает?) дынные из
         from_dir и переносит в to_dir -> очищает from_dir, но не трогает структуру.
     Скрипт использует файлы, а не данные из библиотеки. Повторно проходится по from_dir дял копирования.
@@ -229,6 +226,7 @@ class ExpansionTab(QWidget):
         self.logger = logging.getLogger('App')
         self.settings = settings
         self.db = db
+        self.tag_changer = TagChanger()
 
         # Создание виджетов и макета для их размещения
         self.libraries_list_widget = LibrariesWidget()
@@ -288,4 +286,21 @@ class ExpansionTab(QWidget):
         library = self.libraries_list_widget.libraries_list.currentText()
         to_dir = self.to_dir_widget.fild.toPlainText()
         from_dir = self.from_dir_widget.fild.toPlainText()
-        print(library, to_dir, from_dir)
+        artist_dirs = '/n'.join(self.settings.artist_dirs)
+
+        if not library or not to_dir or not from_dir or not artist_dirs:
+            dlg = QMessageBox(self)
+            dlg.setText('Не все данные были заполнены')
+            return dlg.exec()
+
+        self.tag_changer.set_up_target_dir(from_dir)
+        self.tag_changer.set_up_artist_dirs(artist_dirs)
+
+        self.logger.info('Запуск скрипта')
+        song_datas = self.tag_changer.start(self.tag_changer.target_dir)
+        # with self.db:
+        #     for song_data in song_datas:
+        #         self.db.insert(song_data)
+        for song in song_datas:
+            file_path = Path(from_dir, song.file_path)
+            print(file_path)

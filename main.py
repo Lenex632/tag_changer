@@ -6,7 +6,7 @@ import sys
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget
 
-from app import MainTab, FindDuplicatesTab, AddingTab
+from app import MainTab, FindDuplicatesTab, ExpansionTab
 from db import DBController
 
 
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         # Создание и размещение вкладок
         tabs = QTabWidget()
         tabs.addTab(MainTab(self.settings), 'Изменение тегов')
-        tabs.addTab(AddingTab(self.settings, self.db), 'Добавление')
+        tabs.addTab(ExpansionTab(self.settings, self.db), 'Добавление')
         tabs.addTab(FindDuplicatesTab(self.settings), 'Поиск дубликатов')
         tabs.addTab(QWidget(), 'Синхронизация')
 

@@ -239,17 +239,6 @@ class FindDuplicatesDialog(QDialog):
 
 
 class ExpansionTab(QWidget):
-    """
-    СНАЧАЛА ИЗМЕНИТЬ РАБОТУ MainTab, ЧТОБЫ МОЖНО БЫЛО РЕГИСТРИРОВАТЬ И УДАЛЯТЬ НОВЫЕ БИБЛИОТЕКИ
-
-    Запуск -> запускает TagChanger по from_dir -> записывает данные в library -> копирует (либо вырезает?) дынные из
-        from_dir и переносит в to_dir -> очищает from_dir, но не трогает структуру.
-    Скрипт использует файлы, а не данные из библиотеки. Повторно проходится по from_dir дял копирования.
-
-    Попробовать изменить структуру settings, что бы новые разделы были как библиотеки??? - СЛОЖНО, МБ ПОТОМ.
-    Можно попробовать создавать промежуточную библиотеку, и использовать данные от туда для копирования и удаления
-        файлов из from_dir.
-    """
     def __init__(self, settings, db) -> None:
         super().__init__()
         self.logger = logging.getLogger('App')
@@ -327,9 +316,11 @@ class ExpansionTab(QWidget):
 
         self.logger.info('Запуск скрипта')
         song_datas = self.tag_changer.start(self.tag_changer.target_dir)
-        # with self.db:
-        #     for song_data in song_datas:
-        #         self.db.insert(song_data)
-        for song in song_datas:
-            file_path = Path(from_dir, song.file_path)
-            print(file_path)
+        with self.db:
+            for song_data in song_datas:
+                self.db.insert(song_data, library)
+
+                from_path = Path(from_dir, song_data.file_path)
+                to_path = Path(to_dir, song_data.file_path)
+                to_path.parent.mkdir(parents=True, exist_ok=True)
+                from_path.rename(to_path)

@@ -16,8 +16,6 @@ class DBController:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.db_name = db_name
         self.db_path = Path(Path(__file__).parent, self.db_name)
-        self.main_table = 'main'
-        self.sync_table = 'sync'
         self.table_model = TableModel().__dict__
 
     def __enter__(self) -> "DBController":
@@ -69,7 +67,7 @@ class DBController:
         """Очищение таблицы от всех данных"""
         query = f'DELETE FROM {table}'
         self.execute(query)
-        self.logger.info(f'"{self.main_table}" has been cleared')
+        self.logger.info(f'"{table}" has been cleared')
 
     def drop_table(self, table: str = 'main') -> None:
         """Удаляет выбранную таблицу"""

@@ -90,6 +90,7 @@ class MainTab(QWidget):
 
     def start(self):
         """Запуск скрипта"""
+        # TODO возможно стоит сохранять настройки перед запуском и данный брать не с полей, а с settings
         target_dir = self.target_dir_widget.fild.toPlainText()
         artist_dirs = self.artist_dirs_widget.fild.toPlainText()
         db_update = True if self.main_button_widget.db_update_checkbox.checkState() is Qt.CheckState.Checked else False
@@ -211,7 +212,7 @@ class FindDuplicatesDialog(QDialog):
 
 class ExpansionTab(QWidget):
     """
-    СНАЧАЛА НАСТРОИТЬ СПОСОБЫ СМЕНЫ БИБЛИОТЕКИ
+    СНАЧАЛА ИЗМЕНИТЬ РАБОТУ MainTab, ЧТОБЫ МОЖНО БЫЛО РЕГИСТРИРОВАТЬ И УДАЛЯТЬ НОВЫЕ БИБЛИОТЕКИ
 
     Запуск -> запускает TagChanger по from_dir -> записывает данные в library -> копирует (либо вырезает?) дынные из
         from_dir и переносит в to_dir -> очищает from_dir, но не трогает структуру.
@@ -261,8 +262,8 @@ class ExpansionTab(QWidget):
             library = dlg.textValue()
             if library:
                 self.libraries_list_widget.libraries_list.addItem(library)
-                # with self.db:
-                #     self.db.create_table_if_not_exist(library)
+                with self.db:
+                    self.db.create_table_if_not_exist(library)
 
     def open_remove_library_dialog(self):
         dlg = QInputDialog(self)
@@ -276,8 +277,8 @@ class ExpansionTab(QWidget):
             library = dlg.textValue()
             if library:
                 self.libraries_list_widget.libraries_list.removeItem(items[library])
-                # with self.db:
-                #     self.db.remove_table(library)
+                with self.db:
+                    self.db.remove_table(library)
 
     def open_readme(self):
         pass
@@ -286,7 +287,7 @@ class ExpansionTab(QWidget):
         library = self.libraries_list_widget.libraries_list.currentText()
         to_dir = self.to_dir_widget.fild.toPlainText()
         from_dir = self.from_dir_widget.fild.toPlainText()
-        artist_dirs = '/n'.join(self.settings.artist_dirs)
+        artist_dirs = self.settings.artist_dirs
 
         if not library or not to_dir or not from_dir or not artist_dirs:
             dlg = QMessageBox(self)
@@ -294,7 +295,7 @@ class ExpansionTab(QWidget):
             return dlg.exec()
 
         self.tag_changer.set_up_target_dir(from_dir)
-        self.tag_changer.set_up_artist_dirs(artist_dirs)
+        self.tag_changer.artist_dirs = artist_dirs
 
         self.logger.info('Запуск скрипта')
         song_datas = self.tag_changer.start(self.tag_changer.target_dir)

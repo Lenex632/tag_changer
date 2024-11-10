@@ -131,7 +131,7 @@ class TagChanger:
                     self.logger.debug(f'AudioFile has no images: "{file_path}"')
                     continue
                 except AttributeError as e:
-                    # TODO узнать при каких условиях может вызваться
+                    # TODO может вызваться, когда у song вообще нет тегов images
                     self.logger.error(f'Unknown error: {e}')
                     continue
                 except OSError:
@@ -185,7 +185,6 @@ class TagChanger:
             # песни в исполнителе без альбома (создаётся папка с альбомом)
             try:
                 album = song.tag.album
-            # TODO иногда не отлавливается даже AttributeError либо что-то ещё из-за чего альбом не пробрасывается
             except AttributeError:
                 album = 'Without Album'
             album_dir = Path(file_path.parent, album)

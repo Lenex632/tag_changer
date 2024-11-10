@@ -108,7 +108,6 @@ class MainButtons(QWidget):
     def __init__(self):
         """Класс для работы с кнопками в главном окне"""
         super().__init__()
-        self.library_chose_box = QComboBox()
         self.db_update_checkbox = QCheckBox('Обновить базу данных основываясь на обработанных данных')
         self.readme_button = QPushButton('Открыть ReadMe')
         self.reset_settings_button = QPushButton('Сбросить настройки')
@@ -120,8 +119,7 @@ class MainButtons(QWidget):
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
         layout = QGridLayout()
-        layout.addWidget(self.library_chose_box, 0, 0)
-        layout.addWidget(self.db_update_checkbox, 0, 1, 1, 2)
+        layout.addWidget(self.db_update_checkbox, 0, 0, 1, 2)
         layout.addWidget(self.readme_button, 1, 0)
         layout.addWidget(self.reset_settings_button, 2, 0)
         layout.addWidget(self.save_settings_button, 2, 1)
@@ -229,7 +227,7 @@ class LibrariesWidget(QWidget):
 
     def create_layout(self):
         layout = QHBoxLayout()
-        layout.addWidget(self.libraries_list)
+        layout.addWidget(self.libraries_list, 1)
         layout.addWidget(self.add_library_button)
         layout.addWidget(self.remove_library_button)
 

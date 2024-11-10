@@ -13,7 +13,7 @@ class TestTagChanger:
         set_up_logger_config()
         tc = TagChanger()
         tc.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
-        tc.set_up_artist_dirs('Legend')
+        tc.set_up_artist_dirs(['Legend'])
         return tc
 
     def test_delete_numbers_with_artist(self, tag_changer):

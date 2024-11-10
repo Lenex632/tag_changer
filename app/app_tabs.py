@@ -2,13 +2,7 @@ import logging
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QMessageBox,
-    QDialog,
-    QInputDialog,
-)
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QDialog, QInputDialog
 
 from .app_wigets import (
     Directories,
@@ -30,34 +24,64 @@ class MainTab(QWidget):
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
-
         self.tag_changer = TagChanger()
-
         self.db = DBController()
-        with self.db:
-            self.db.create_table_if_not_exist()
-            self.libraries_list = self.db.get_tables_list()
 
         # Создание виджетов и макета для их размещения
         self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
         self.artist_dirs_widget = ArtistDirsWidget(self.settings)
+        self.libraries_list_widget = LibrariesWidget()
         self.main_button_widget = MainButtons()
         self.main_layout = QVBoxLayout()
         self.create_layout()
 
     def create_layout(self):
         """Настройка кнопок и макета"""
+        with self.db:
+            libraries_list = self.db.get_tables_list()
+        self.libraries_list_widget.libraries_list.addItem('')
+        self.libraries_list_widget.add_library_button.clicked.connect(self.open_create_library_dialog)
+        self.libraries_list_widget.remove_library_button.clicked.connect(self.open_remove_library_dialog)
+        self.libraries_list_widget.libraries_list.addItems(libraries_list)
+        self.libraries_list_widget.libraries_list.setCurrentText(self.settings.current_library)
+
         self.main_button_widget.readme_button.clicked.connect(self.open_readme)
         self.main_button_widget.reset_settings_button.clicked.connect(self.reset_settings)
         self.main_button_widget.save_settings_button.clicked.connect(self.save_settings)
         self.main_button_widget.start_button.clicked.connect(self.start)
 
-        self.main_button_widget.library_chose_box.addItems(self.libraries_list)
-
         self.main_layout.addWidget(self.target_dir_widget)
         self.main_layout.addWidget(self.artist_dirs_widget)
+        self.main_layout.addWidget(self.libraries_list_widget)
         self.main_layout.addWidget(self.main_button_widget)
         self.setLayout(self.main_layout)
+
+    # TODO по хорошему бы записать эти методы в виджет что бы не повторяться
+    def open_create_library_dialog(self):
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle('Введите название новой библиотеки')
+
+        if dlg.exec():
+            library = dlg.textValue()
+            if library:
+                self.libraries_list_widget.libraries_list.addItem(library)
+                with self.db:
+                    self.db.create_table_if_not_exist(library)
+
+    def open_remove_library_dialog(self):
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle('Выберите, какую библиотеку хотите удалить')
+        items = {}
+        for idx in range(1, self.libraries_list_widget.libraries_list.count()):
+            items[self.libraries_list_widget.libraries_list.itemText(idx)] = idx
+        dlg.setComboBoxItems(items.keys())
+
+        if dlg.exec():
+            library = dlg.textValue()
+            if library:
+                self.libraries_list_widget.libraries_list.removeItem(items[library])
+                with self.db:
+                    self.db.drop_table(library)
 
     def open_readme(self):
         """Открытие README.md в текстовом редакторе в качестве инструкций и подсказок"""
@@ -68,6 +92,7 @@ class MainTab(QWidget):
         """Сброс настроек"""
         self.target_dir_widget.fild.setText('')
         self.artist_dirs_widget.fild.setText('')
+        self.libraries_list_widget.libraries_list.setCurrentIndex(0)
         self.settings.clean_main_data()
         self.logger.info('Настройки сброшены')
 
@@ -75,9 +100,11 @@ class MainTab(QWidget):
         """Сохранение настроек"""
         target_dir = self.target_dir_widget.fild.toPlainText()
         artist_dir = self.artist_dirs_widget.fild.toPlainText()
+        library = self.libraries_list_widget.libraries_list.currentText()
 
         self.settings.set_target_dir(target_dir)
         self.settings.set_artist_dir(artist_dir)
+        self.settings.set_current_library(library)
         self.settings.save_settings()
 
         self.logger.info('Настройки сохранены')
@@ -90,9 +117,10 @@ class MainTab(QWidget):
 
     def start(self):
         """Запуск скрипта"""
-        # TODO возможно стоит сохранять настройки перед запуском и данный брать не с полей, а с settings
-        target_dir = self.target_dir_widget.fild.toPlainText()
-        artist_dirs = self.artist_dirs_widget.fild.toPlainText()
+        self.save_settings()
+        target_dir = self.settings.target_dir
+        artist_dirs = self.settings.artist_dirs
+        library = self.settings.current_library
         db_update = True if self.main_button_widget.db_update_checkbox.checkState() is Qt.CheckState.Checked else False
 
         self.tag_changer.set_up_target_dir(target_dir)
@@ -102,9 +130,9 @@ class MainTab(QWidget):
         song_datas = self.tag_changer.start(self.tag_changer.target_dir)
         if db_update:
             with self.db:
-                self.db.clear_table()
+                self.db.clear_table(library)
                 for song_data in song_datas:
-                    self.db.insert(song_data)
+                    self.db.insert(song_data, library)
         else:
             list(song_datas)
 
@@ -277,8 +305,8 @@ class ExpansionTab(QWidget):
             library = dlg.textValue()
             if library:
                 self.libraries_list_widget.libraries_list.removeItem(items[library])
-                with self.db:
-                    self.db.remove_table(library)
+                with (self.db):
+                    self.db.drop_table(library)
 
     def open_readme(self):
         pass

@@ -14,7 +14,9 @@ from db import DBController
 #       Сделать file_path в бд уникальным, что бы по нему нельзя было создавать записи в бд при "Добавлении".
 #       "Добавление" - Есть папка from_dir, есть папка to_dir. Обрабатывать from_dir -> копировать в to_dir (либо просто
 #     копировать) -> обновлять бд (либо обновлять прямо во время копирования). Возможно сделать просто как галочку с
-#     возможностью выбрать from_dir. После завершения копирования - очищать from_dir, но не трогать структуру
+#     возможностью выбрать from_dir. После завершения копирования - очищать from_dir, но не трогать структуру.
+#       По переписывать тестики.
+#       Подкорректировать settings, возможно убрать extension.
 #       Next:
 #               "Добавление": создать таб, создать виджет
 #               "Синхронизация"
@@ -31,6 +33,7 @@ class Settings:
 
         self.target_dir = None
         self.artist_dirs = None
+        self.current_library = None
         self.to_dir = None
         self.from_dir = None
         self.sync_dir = None
@@ -44,8 +47,11 @@ class Settings:
 
         self.target_dir = self._settings.get(section='main', option='target_dir', fallback=None)
         self.artist_dirs = self._settings.get(section='main', option='artist_dirs', fallback='').split('\n')
+        self.current_library = self._settings.get(section='main', option='current_library', fallback='')
+
         self.sync_dir = self._settings.get(section='settings', option='sync_dir', fallback='')
         self.target_sync_dir = self._settings.get(section='settings', option='sync_dir', fallback='')
+
         self.to_dir = ''
         self.from_dir = ''
 
@@ -58,6 +64,11 @@ class Settings:
         """Настраивает значение artist_dirs"""
         self._settings.set(section='main', option='artist_dirs', value=value)
         self.artist_dirs = value
+
+    def set_current_library(self, value) -> None:
+        """Настраивает значение current_library"""
+        self._settings.set(section='main', option='current_library', value=value)
+        self.current_library = value
 
     def set_sync_dir(self, value) -> None:
         """Настраивает значение sync_dir"""
@@ -78,6 +89,7 @@ class Settings:
         """Сбрасывает настройки и сохраняет их в файл"""
         self.set_target_dir('')
         self.set_artist_dir('')
+        self.set_current_library('')
         self.save_settings()
 
     def clean_sync_data(self) -> None:

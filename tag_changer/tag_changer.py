@@ -31,8 +31,8 @@ class TagChanger:
     def set_up_target_dir(self, target_dir: str):
         self.target_dir = Path(target_dir)
 
-    def set_up_artist_dirs(self, artist_dirs: str):
-        self.artist_dirs = artist_dirs.split('\n')
+    def set_up_artist_dirs(self, artist_dirs: list):
+        self.artist_dirs = artist_dirs
 
     def delete_numbers(self, target: str) -> str:
         """Удаление цифр в начале"""
@@ -247,7 +247,7 @@ if __name__ == '__main__':
 
     a = TagChanger()
     a.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
-    a.set_up_artist_dirs('Legend\nЛегенды')
+    a.set_up_artist_dirs(['Legend', 'Легенды'])
     items = a.start(a.target_dir)
 
     db = DBController()

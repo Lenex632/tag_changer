@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QGridLayout,
     QPushButton,
+    QInputDialog,
     QFileDialog,
     QTextEdit,
     QCheckBox,
@@ -15,6 +16,8 @@ from PyQt6.QtWidgets import (
     QTreeWidget,
     QComboBox,
 )
+from settings import Settings
+from db import DBController
 
 
 class Directories(Enum):
@@ -25,7 +28,7 @@ class Directories(Enum):
 
 
 class DirWidget(QWidget):
-    def __init__(self, settings, directory: Directories):
+    def __init__(self, settings: Settings, directory: Directories):
         """Класс для работы с полем для ввода target_dir"""
         super().__init__()
         self.settings = settings
@@ -74,7 +77,7 @@ class DirWidget(QWidget):
 
 
 class ArtistDirsWidget(QWidget):
-    def __init__(self, settings):
+    def __init__(self, settings: Settings):
         """Класс для работы с полем для ввода artist_dir"""
         super().__init__()
         self.settings = settings
@@ -216,9 +219,11 @@ class ExpansionButtons(QWidget):
 
 
 class LibrariesWidget(QWidget):
-    def __init__(self):
+    def __init__(self, settings: Settings, db: DBController):
         super().__init__()
 
+        self.setting = settings
+        self.db = db
         self.libraries_list = QComboBox()
         self.add_library_button = QPushButton('+')
         self.remove_library_button = QPushButton('-')
@@ -226,9 +231,43 @@ class LibrariesWidget(QWidget):
         self.create_layout()
 
     def create_layout(self):
-        layout = QHBoxLayout()
-        layout.addWidget(self.libraries_list, 1)
-        layout.addWidget(self.add_library_button)
-        layout.addWidget(self.remove_library_button)
+        layout = QGridLayout()
+        layout.addWidget(QLabel('Выберите библиотеку, либо создайте её'), 0, 0, 1, 2)
+        layout.addWidget(self.libraries_list, 1, 0, 1, 2)
+        layout.addWidget(self.add_library_button, 1, 3)
+        layout.addWidget(self.remove_library_button, 1, 4)
+
+        with self.db:
+            libraries_list = self.db.get_tables_list()
+        self.libraries_list.addItem('')
+        self.libraries_list.addItems(libraries_list)
+        self.add_library_button.clicked.connect(self.open_create_library_dialog)
+        self.remove_library_button.clicked.connect(self.open_remove_library_dialog)
 
         self.setLayout(layout)
+
+    def open_create_library_dialog(self):
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle('Введите название новой библиотеки')
+
+        if dlg.exec():
+            library = dlg.textValue()
+            with self.db:
+                if library and library not in self.db.get_tables_list():
+                    self.libraries_list.addItem(library)
+                    self.db.create_table_if_not_exist(library)
+
+    def open_remove_library_dialog(self):
+        dlg = QInputDialog(self)
+        dlg.setWindowTitle('Выберите, какую библиотеку хотите удалить')
+        items = {}
+        for idx in range(1, self.libraries_list.count()):
+            items[self.libraries_list.itemText(idx)] = idx
+        dlg.setComboBoxItems(items.keys())
+
+        if dlg.exec():
+            library = dlg.textValue()
+            if library:
+                self.libraries_list.removeItem(items[library])
+                with (self.db):
+                    self.db.drop_table(library)

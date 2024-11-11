@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QDialog, QInputDialog
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QMessageBox, QDialog
 
 from .app_wigets import (
     Directories,
@@ -16,33 +16,28 @@ from .app_wigets import (
 )
 from db import DBController
 from tag_changer import TagChanger
+from settings import Settings
 
 
 class MainTab(QWidget):
-    def __init__(self, settings):
+    def __init__(self, settings: Settings, db: DBController):
         """Класс главного окна"""
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
         self.tag_changer = TagChanger()
-        self.db = DBController()
+        self.db = db
 
         # Создание виджетов и макета для их размещения
         self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
         self.artist_dirs_widget = ArtistDirsWidget(self.settings)
-        self.libraries_list_widget = LibrariesWidget()
+        self.libraries_list_widget = LibrariesWidget(self.settings, self.db)
         self.main_button_widget = MainButtons()
         self.main_layout = QVBoxLayout()
         self.create_layout()
 
     def create_layout(self):
         """Настройка кнопок и макета"""
-        with self.db:
-            libraries_list = self.db.get_tables_list()
-        self.libraries_list_widget.libraries_list.addItem('')
-        self.libraries_list_widget.add_library_button.clicked.connect(self.open_create_library_dialog)
-        self.libraries_list_widget.remove_library_button.clicked.connect(self.open_remove_library_dialog)
-        self.libraries_list_widget.libraries_list.addItems(libraries_list)
         self.libraries_list_widget.libraries_list.setCurrentText(self.settings.current_library)
 
         self.main_button_widget.readme_button.clicked.connect(self.open_readme)
@@ -56,36 +51,9 @@ class MainTab(QWidget):
         self.main_layout.addWidget(self.main_button_widget)
         self.setLayout(self.main_layout)
 
-    # TODO по хорошему бы записать эти методы в виджет что бы не повторяться
-    def open_create_library_dialog(self):
-        dlg = QInputDialog(self)
-        dlg.setWindowTitle('Введите название новой библиотеки')
-
-        if dlg.exec():
-            library = dlg.textValue()
-            if library:
-                self.libraries_list_widget.libraries_list.addItem(library)
-                with self.db:
-                    self.db.create_table_if_not_exist(library)
-
-    def open_remove_library_dialog(self):
-        dlg = QInputDialog(self)
-        dlg.setWindowTitle('Выберите, какую библиотеку хотите удалить')
-        items = {}
-        for idx in range(1, self.libraries_list_widget.libraries_list.count()):
-            items[self.libraries_list_widget.libraries_list.itemText(idx)] = idx
-        dlg.setComboBoxItems(items.keys())
-
-        if dlg.exec():
-            library = dlg.textValue()
-            if library:
-                self.libraries_list_widget.libraries_list.removeItem(items[library])
-                with self.db:
-                    self.db.drop_table(library)
-
     def open_readme(self):
         """Открытие README.md в текстовом редакторе в качестве инструкций и подсказок"""
-        self.show_finish_dialog()
+        self.show_info_dialog('Открытие README')
         self.logger.info('Открытие README')
 
     def reset_settings(self):
@@ -109,10 +77,10 @@ class MainTab(QWidget):
 
         self.logger.info('Настройки сохранены')
 
-    def show_finish_dialog(self):
+    def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
         dlg = QMessageBox(self)
         dlg.setWindowTitle('Tag Changer')
-        dlg.setText('Скрипт завершил работу')
+        dlg.setText(msg)
         dlg.exec()
 
     def start(self):
@@ -122,6 +90,10 @@ class MainTab(QWidget):
         artist_dirs = self.settings.artist_dirs
         library = self.settings.current_library
         db_update = True if self.main_button_widget.db_update_checkbox.checkState() is Qt.CheckState.Checked else False
+
+        if not target_dir or (not library and db_update):
+            self.show_info_dialog('Не все данные были заполнены')
+            return 1
 
         self.tag_changer.set_up_target_dir(target_dir)
         self.tag_changer.set_up_artist_dirs(artist_dirs)
@@ -136,7 +108,7 @@ class MainTab(QWidget):
         else:
             list(song_datas)
 
-        self.show_finish_dialog()
+        self.show_info_dialog('Скрипт завершил работу')
         self.logger.info('Скрипт завершил работу')
 
 
@@ -150,16 +122,14 @@ class FindDuplicatesTab(QWidget):
                 помеченные - удаляются с диска. Пути ищутся исходя из заданной target_dir и найденных относительных
                 путей файлов.
     """
-    def __init__(self, settings):
+    def __init__(self, settings: Settings, db: DBController):
         """Класс главного окна"""
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
         self.duplicates = None
 
-        self.db = DBController()
-        with self.db:
-            self.db.create_table_if_not_exist()
+        self.db = db
 
         # Создание виджетов и макета для их размещения
         self.find_duplicates_buttons_widget = FindDuplicatesButtons()
@@ -194,6 +164,7 @@ class FindDuplicatesTab(QWidget):
         self.logger.info('Запуск скрипта')
 
         with self.db:
+            # TODO дописать libraries
             dup = self.db.find_duplicates()
 
         self.show_results(dup)
@@ -201,7 +172,7 @@ class FindDuplicatesTab(QWidget):
 
 
 class FindDuplicatesDialog(QDialog):
-    def __init__(self, settings, db, duplicates: list | tuple):
+    def __init__(self, settings: Settings, db: DBController, duplicates: list | tuple):
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
@@ -228,6 +199,7 @@ class FindDuplicatesDialog(QDialog):
         items = self.duplicates_widget.get_items_for_delete()
         with self.db:
             for idx, file_path in items:
+                # TODO дописать library
                 self.db.delete(idx)
                 full_path = Path(self.settings.target_dir, file_path)
                 full_path.unlink(missing_ok=True)
@@ -239,7 +211,7 @@ class FindDuplicatesDialog(QDialog):
 
 
 class ExpansionTab(QWidget):
-    def __init__(self, settings, db) -> None:
+    def __init__(self, settings: Settings, db: DBController) -> None:
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
@@ -247,7 +219,7 @@ class ExpansionTab(QWidget):
         self.tag_changer = TagChanger()
 
         # Создание виджетов и макета для их размещения
-        self.libraries_list_widget = LibrariesWidget()
+        self.libraries_list_widget = LibrariesWidget(self.settings, self.db)
         self.to_dir_widget = DirWidget(settings, Directories.to_dir)
         self.from_dir_widget = DirWidget(settings, Directories.from_dir)
         self.buttons_widget = ExpansionButtons()
@@ -255,13 +227,6 @@ class ExpansionTab(QWidget):
         self.create_layout()
 
     def create_layout(self):
-        with self.db:
-            libraries_list = self.db.get_tables_list()
-        self.libraries_list_widget.libraries_list.addItem('')
-        self.libraries_list_widget.libraries_list.addItems(libraries_list)
-
-        self.libraries_list_widget.add_library_button.clicked.connect(self.open_create_library_dialog)
-        self.libraries_list_widget.remove_library_button.clicked.connect(self.open_remove_library_dialog)
         self.buttons_widget.readme_button.clicked.connect(self.open_readme)
         self.buttons_widget.start_button.clicked.connect(self.start)
 
@@ -270,32 +235,6 @@ class ExpansionTab(QWidget):
         self.main_layout.addWidget(self.from_dir_widget)
         self.main_layout.addWidget(self.buttons_widget)
         self.setLayout(self.main_layout)
-
-    def open_create_library_dialog(self):
-        dlg = QInputDialog(self)
-        dlg.setWindowTitle('Введите название новой библиотеки')
-
-        if dlg.exec():
-            library = dlg.textValue()
-            if library:
-                self.libraries_list_widget.libraries_list.addItem(library)
-                with self.db:
-                    self.db.create_table_if_not_exist(library)
-
-    def open_remove_library_dialog(self):
-        dlg = QInputDialog(self)
-        dlg.setWindowTitle('Выберите, какую библиотеку хотите удалить')
-        items = {}
-        for idx in range(1, self.libraries_list_widget.libraries_list.count()):
-            items[self.libraries_list_widget.libraries_list.itemText(idx)] = idx
-        dlg.setComboBoxItems(items.keys())
-
-        if dlg.exec():
-            library = dlg.textValue()
-            if library:
-                self.libraries_list_widget.libraries_list.removeItem(items[library])
-                with (self.db):
-                    self.db.drop_table(library)
 
     def open_readme(self):
         pass

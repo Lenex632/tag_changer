@@ -5,8 +5,6 @@ import sqlite3
 from model import SongData, TableModel
 
 
-# TODO инициализировать базу надо вручную
-#   избавиться от дефолтного main в имени таблицы
 class DBController:
     def __init__(self, db_name: str = 'music.db') -> None:
         """
@@ -49,10 +47,12 @@ class DBController:
 
         return result
 
-    def create_table_if_not_exist(self, table: str = 'main') -> None:
+    def create_table_if_not_exist(self, table: str) -> None:
         """Создаёт базу данных и таблицу table, если такие не существуют"""
         table_columns = f'{", ".join(f"{key} {value}" for key, value in self.table_model.items())}'
-        query = f'CREATE TABLE IF NOT EXISTS {table} ({table_columns})'
+        # TODO мб подправить хардкод с file_path
+        query = (f'CREATE TABLE IF NOT EXISTS {table} ({table_columns}, '
+                 f'CONSTRAINT unique_file_path UNIQUE (file_path))')
         self.execute(query)
 
     def get_tables_list(self) -> list | tuple:
@@ -63,19 +63,19 @@ class DBController:
 
         return result
 
-    def clear_table(self, table: str = 'main') -> None:
+    def clear_table(self, table: str) -> None:
         """Очищение таблицы от всех данных"""
         query = f'DELETE FROM {table}'
         self.execute(query)
         self.logger.info(f'"{table}" has been cleared')
 
-    def drop_table(self, table: str = 'main') -> None:
+    def drop_table(self, table: str) -> None:
         """Удаляет выбранную таблицу"""
         query = f'DROP TABLE {table}'
         self.execute(query)
         self.logger.info(f'"{table}" has been deleted')
 
-    def insert(self, song_data: SongData, table: str = 'main') -> None:
+    def insert(self, song_data: SongData, table: str) -> None:
         """Вставка значений song_data в таблицу"""
         # Подготовка значений, а то sqlite3 будет ругаться
         song_data.file_path = str(song_data.file_path)
@@ -91,13 +91,13 @@ class DBController:
 
         self.logger.debug(f'"{song_data.artist} - {song_data.title}" has been added to table "{table}"')
 
-    def delete(self, song_id: int, table: str = 'main') -> None:
+    def delete(self, song_id: int, table: str) -> None:
         """Удаление элемента по id"""
         query = f'DELETE FROM {table} WHERE song_id={song_id}'
         self.execute(query)
         self.logger.debug(f'Song with id={song_id} has been deleted from table "{table}"')
 
-    def find(self, condition: str = None, table: str = 'main') -> list:
+    def find(self, table: str, condition: str = None) -> list:
         """
         Нахождение элементов по condition (в формате 'song_id = 1'), либо вообще всей таблички, если condition=None
         """
@@ -110,7 +110,7 @@ class DBController:
 
         return results
 
-    def update(self, condition: str, new: str, table: str = 'main') -> None:
+    def update(self, condition: str, new: str, table: str) -> None:
         """
         Нахождение элемента с condition (в формате 'song_id = 1') и обновление его
         параметров new (в формате 'title = "New Title"')
@@ -119,7 +119,7 @@ class DBController:
         self.logger.debug(f'Update table "{table}" where {condition} with new parameters {new}')
         self.execute(query)
 
-    def find_duplicates(self, table: str = 'main') -> list[tuple]:
+    def find_duplicates(self, table: str) -> list[tuple]:
         query = f'''
             SELECT title, artist, COUNT(*)
             FROM {table}
@@ -134,7 +134,7 @@ class DBController:
             title = res[0]
             artist = res[1]
             condition = f'title = "{title}" AND artist = "{artist}"'
-            duplicate = self.find(condition)
+            duplicate = self.find(table, condition)
             duplicates.append((title, artist, duplicate))
 
         return duplicates
@@ -147,8 +147,8 @@ if __name__ == '__main__':
     db = DBController()
 
     with db:
-        db.create_table_if_not_exist()
-        dup = db.find_duplicates()
+        db.create_table_if_not_exist('test_main')
+        dup = db.find_duplicates('test_main')
 
     for t, a, g in dup:
         print(t, a)

@@ -253,9 +253,9 @@ if __name__ == '__main__':
     db = DBController()
 
     with db:
-        db.create_table_if_not_exist()
+        db.create_table_if_not_exist('test_main')
         for item in items:
-            db.insert(item)
+            db.insert(item, 'test_main')
 
     # проверки и возможные функции для вычисления или извлечения данных
     # logger = logging.getLogger('TagChanger')

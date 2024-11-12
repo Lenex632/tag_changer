@@ -12,10 +12,8 @@ from settings import Settings
 # TODO
 #       По переписывать тестики.
 #       Подкорректировать settings, возможно убрать extension.
-#       Добавить в settings параметры библиотек, что бы они были общими для всех вкладок
 #       Next:
 #               "Синхронизация"
-#               Добавить выбор библиотеки в "Поиск дубликатов"
 # TODO остались в: app_tubs.py, tag_changer.py, db_controller.py
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -25,23 +23,45 @@ class MainWindow(QMainWindow):
         self.logger = logging.getLogger('App')
         self.settings = Settings()
         self.db = DBController()
+
+        self.main_tab = MainTab(self.settings, self.db)
+        self.expansion_tab = ExpansionTab(self.settings, self.db)
+        self.find_duplicates_tab = FindDuplicatesTab(self.settings, self.db)
+
         self.set_window_parameters()
 
     def set_window_parameters(self):
         """Настройка параметров окна"""
         self.setWindowTitle('Tag Changer')
         self.setFixedSize(QSize(800, 500))
+        self.set_up_libraries_widget()
 
         # Создание и размещение вкладок
         tabs = QTabWidget()
-        tabs.addTab(MainTab(self.settings, self.db), 'Изменение тегов')
-        tabs.addTab(ExpansionTab(self.settings, self.db), 'Добавление')
-        tabs.addTab(FindDuplicatesTab(self.settings, self.db), 'Поиск дубликатов')
+        tabs.addTab(self.main_tab, 'Изменение тегов')
+        tabs.addTab(self.expansion_tab, 'Добавление')
+        tabs.addTab(self.find_duplicates_tab, 'Поиск дубликатов')
         tabs.addTab(QWidget(), 'Синхронизация')
 
         self.setCentralWidget(tabs)
 
         self.show()
+
+    def set_up_libraries_widget(self):
+        self.main_tab.libraries_widget.add_library_button.clicked.connect(self.reload_all_libraries_list)
+        self.main_tab.libraries_widget.remove_library_button.clicked.connect(self.reload_all_libraries_list)
+
+        self.expansion_tab.libraries_widget.add_library_button.clicked.connect(self.reload_all_libraries_list)
+        self.expansion_tab.libraries_widget.remove_library_button.clicked.connect(self.reload_all_libraries_list)
+
+        self.find_duplicates_tab.libraries_widget.add_library_button.clicked.connect(self.reload_all_libraries_list)
+        self.find_duplicates_tab.libraries_widget.remove_library_button.clicked.connect(self.reload_all_libraries_list)
+
+    def reload_all_libraries_list(self):
+        self.main_tab.libraries_widget.reload_libraries_list()
+        self.expansion_tab.libraries_widget.reload_libraries_list()
+        self.find_duplicates_tab.libraries_widget.reload_libraries_list()
+        # self.sync_tab.libraries_widget.reload_libraries_list()
 
 
 if __name__ == '__main__':

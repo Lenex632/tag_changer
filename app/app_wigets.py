@@ -222,7 +222,7 @@ class LibrariesWidget(QWidget):
     def __init__(self, settings: Settings, db: DBController):
         super().__init__()
 
-        self.setting = settings
+        self.settings = settings
         self.db = db
         self.libraries_list = QComboBox()
         self.add_library_button = QPushButton('+')
@@ -237,14 +237,19 @@ class LibrariesWidget(QWidget):
         layout.addWidget(self.add_library_button, 1, 3)
         layout.addWidget(self.remove_library_button, 1, 4)
 
-        with self.db:
-            libraries_list = self.db.get_tables_list()
-        self.libraries_list.addItem('')
-        self.libraries_list.addItems(libraries_list)
+        self.reload_libraries_list()
         self.add_library_button.clicked.connect(self.open_create_library_dialog)
         self.remove_library_button.clicked.connect(self.open_remove_library_dialog)
 
         self.setLayout(layout)
+
+    def reload_libraries_list(self):
+        self.libraries_list.clear()
+        with self.db:
+            libraries_list = self.db.get_tables_list()
+        self.libraries_list.addItem('')
+        self.libraries_list.addItems(libraries_list)
+        self.libraries_list.setCurrentText(self.settings.current_library)
 
     def open_create_library_dialog(self):
         dlg = QInputDialog(self)
@@ -269,5 +274,5 @@ class LibrariesWidget(QWidget):
             library = dlg.textValue()
             if library:
                 self.libraries_list.removeItem(items[library])
-                with (self.db):
+                with self.db:
                     self.db.drop_table(library)

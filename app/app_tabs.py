@@ -31,15 +31,13 @@ class MainTab(QWidget):
         # Создание виджетов и макета для их размещения
         self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
         self.artist_dirs_widget = ArtistDirsWidget(self.settings)
-        self.libraries_list_widget = LibrariesWidget(self.settings, self.db)
+        self.libraries_widget = LibrariesWidget(self.settings, self.db)
         self.main_button_widget = MainButtons()
         self.main_layout = QVBoxLayout()
         self.create_layout()
 
     def create_layout(self):
         """Настройка кнопок и макета"""
-        self.libraries_list_widget.libraries_list.setCurrentText(self.settings.current_library)
-
         self.main_button_widget.readme_button.clicked.connect(self.open_readme)
         self.main_button_widget.reset_settings_button.clicked.connect(self.reset_settings)
         self.main_button_widget.save_settings_button.clicked.connect(self.save_settings)
@@ -47,7 +45,7 @@ class MainTab(QWidget):
 
         self.main_layout.addWidget(self.target_dir_widget)
         self.main_layout.addWidget(self.artist_dirs_widget)
-        self.main_layout.addWidget(self.libraries_list_widget)
+        self.main_layout.addWidget(self.libraries_widget)
         self.main_layout.addWidget(self.main_button_widget)
         self.setLayout(self.main_layout)
 
@@ -60,21 +58,24 @@ class MainTab(QWidget):
         """Сброс настроек"""
         self.target_dir_widget.fild.setText('')
         self.artist_dirs_widget.fild.setText('')
-        self.libraries_list_widget.libraries_list.setCurrentIndex(0)
+        self.libraries_widget.libraries_list.setCurrentIndex(0)
         self.settings.clean_main_data()
+
+        self.show_info_dialog('Настройки сброшены')
         self.logger.info('Настройки сброшены')
 
     def save_settings(self):
         """Сохранение настроек"""
         target_dir = self.target_dir_widget.fild.toPlainText()
         artist_dir = self.artist_dirs_widget.fild.toPlainText()
-        library = self.libraries_list_widget.libraries_list.currentText()
+        library = self.libraries_widget.libraries_list.currentText()
 
         self.settings.set_target_dir(target_dir)
         self.settings.set_artist_dir(artist_dir)
         self.settings.set_current_library(library)
         self.settings.save_settings()
 
+        self.show_info_dialog('Настройки сохранены')
         self.logger.info('Настройки сохранены')
 
     def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
@@ -121,6 +122,10 @@ class FindDuplicatesTab(QWidget):
                 выбирать. В окне кнопки 'применить' и 'отменить'. После 'применить' все непомеченные - остаются,
                 помеченные - удаляются с диска. Пути ищутся исходя из заданной target_dir и найденных относительных
                 путей файлов.
+    TODO
+        добавить выбор папки, что бы из неё можно было бы сразу же дубликаты и удалить
+        ЛИБО
+        реализовать это как часть синхронизации
     """
     def __init__(self, settings: Settings, db: DBController):
         """Класс главного окна"""
@@ -133,6 +138,7 @@ class FindDuplicatesTab(QWidget):
 
         # Создание виджетов и макета для их размещения
         self.find_duplicates_buttons_widget = FindDuplicatesButtons()
+        self.libraries_widget = LibrariesWidget(self.settings, self.db)
         self.main_layout = QVBoxLayout()
         self.create_layout()
 
@@ -141,43 +147,50 @@ class FindDuplicatesTab(QWidget):
         self.find_duplicates_buttons_widget.readme_button.clicked.connect(self.open_readme)
         self.find_duplicates_buttons_widget.start_button.clicked.connect(self.start)
 
+        self.main_layout.addWidget(self.libraries_widget)
         self.main_layout.addWidget(self.find_duplicates_buttons_widget)
         self.setLayout(self.main_layout)
 
     def open_readme(self):
         """Открытие README.md в текстовом редакторе в качестве инструкций и подсказок"""
-        self.show_finish_dialog()
+        self.show_info_dialog('Открытие README')
         self.logger.info('Открытие README')
 
-    def show_finish_dialog(self):
+    def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
         dlg = QMessageBox(self)
-        dlg.setWindowTitle('Результаты')
-        dlg.setText('Поиск дубликатов завершён')
+        dlg.setWindowTitle('Поиск дубликатов')
+        dlg.setText(msg)
         dlg.exec()
 
-    def show_results(self, duplicates):
-        dlg = FindDuplicatesDialog(self.settings, self.db, duplicates)
+    def show_results(self, duplicates, library):
+        dlg = FindDuplicatesDialog(self.settings, self.db, duplicates, library)
         dlg.exec()
 
     def start(self):
         """Запуск скрипта"""
         self.logger.info('Запуск скрипта')
 
-        with self.db:
-            # TODO дописать libraries
-            dup = self.db.find_duplicates()
+        library = self.libraries_widget.libraries_list.currentText()
+        if not library:
+            self.show_info_dialog('Выберите библиотеку')
+            return 1
 
-        self.show_results(dup)
+        with self.db:
+            duplicates = self.db.find_duplicates(library)
+
+        self.show_results(duplicates, library)
         self.logger.info('Скрипт завершил работу')
 
 
 class FindDuplicatesDialog(QDialog):
-    def __init__(self, settings: Settings, db: DBController, duplicates: list | tuple):
+    def __init__(self, settings: Settings, db: DBController, duplicates: list | tuple, library: str):
         super().__init__()
         self.logger = logging.getLogger('App')
         self.settings = settings
-        self.duplicates = duplicates
         self.db = db
+
+        self.duplicates = duplicates
+        self.library = library
 
         self.setFixedSize(QSize(800, 500))
         self.setWindowTitle('Результаты')
@@ -188,10 +201,10 @@ class FindDuplicatesDialog(QDialog):
         self.create_layout()
 
     def create_layout(self):
-        self.main_layout.addWidget(self.duplicates_widget)
         self.duplicates_widget.ok_button.clicked.connect(self.click_ok)
         self.duplicates_widget.cansel_button.clicked.connect(self.click_cansel)
 
+        self.main_layout.addWidget(self.duplicates_widget)
         self.setLayout(self.main_layout)
 
     def click_ok(self):
@@ -199,8 +212,7 @@ class FindDuplicatesDialog(QDialog):
         items = self.duplicates_widget.get_items_for_delete()
         with self.db:
             for idx, file_path in items:
-                # TODO дописать library
-                self.db.delete(idx)
+                self.db.delete(idx, self.library)
                 full_path = Path(self.settings.target_dir, file_path)
                 full_path.unlink(missing_ok=True)
         self.close()
@@ -219,9 +231,9 @@ class ExpansionTab(QWidget):
         self.tag_changer = TagChanger()
 
         # Создание виджетов и макета для их размещения
-        self.libraries_list_widget = LibrariesWidget(self.settings, self.db)
-        self.to_dir_widget = DirWidget(settings, Directories.to_dir)
-        self.from_dir_widget = DirWidget(settings, Directories.from_dir)
+        self.libraries_widget = LibrariesWidget(self.settings, self.db)
+        self.to_dir_widget = DirWidget(self.settings, Directories.to_dir)
+        self.from_dir_widget = DirWidget(self.settings, Directories.from_dir)
         self.buttons_widget = ExpansionButtons()
         self.main_layout = QVBoxLayout()
         self.create_layout()
@@ -230,7 +242,7 @@ class ExpansionTab(QWidget):
         self.buttons_widget.readme_button.clicked.connect(self.open_readme)
         self.buttons_widget.start_button.clicked.connect(self.start)
 
-        self.main_layout.addWidget(self.libraries_list_widget)
+        self.main_layout.addWidget(self.libraries_widget)
         self.main_layout.addWidget(self.to_dir_widget)
         self.main_layout.addWidget(self.from_dir_widget)
         self.main_layout.addWidget(self.buttons_widget)
@@ -240,7 +252,7 @@ class ExpansionTab(QWidget):
         pass
 
     def start(self):
-        library = self.libraries_list_widget.libraries_list.currentText()
+        library = self.libraries_widget.libraries_list.currentText()
         to_dir = self.to_dir_widget.fild.toPlainText()
         from_dir = self.from_dir_widget.fild.toPlainText()
         artist_dirs = self.settings.artist_dirs

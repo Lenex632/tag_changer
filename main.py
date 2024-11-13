@@ -2,9 +2,9 @@ import logging
 import sys
 
 from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget
 
-from app import MainTab, FindDuplicatesTab, ExpansionTab
+from app import MainTab, FindDuplicatesTab, ExpansionTab, SynchronizationTab
 from db import DBController
 from settings import Settings
 
@@ -15,6 +15,7 @@ from settings import Settings
 #       Починить бню, когда попадаются файлы НЕ MP3
 #       Починить бню, при копировании уже существующих файлов
 #       Посмотреть что происходит с Cyberpunk, удаляются исполнители (скорее всего, потому что их нет в названии файлов)
+#       Добавить аннотации. Везде.
 #       Next:
 #               "Синхронизация"
 #               В тестах добавить строчки для восстановления тестовых файлов (скорее всего нужно будет сделать через
@@ -34,6 +35,7 @@ class MainWindow(QMainWindow):
         self.main_tab = MainTab(self.settings, self.db)
         self.expansion_tab = ExpansionTab(self.settings, self.db)
         self.find_duplicates_tab = FindDuplicatesTab(self.settings, self.db)
+        self.sync_tab = SynchronizationTab(self.settings, self.db)
 
         self.set_window_parameters()
 
@@ -48,7 +50,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(self.main_tab, 'Изменение тегов')
         tabs.addTab(self.expansion_tab, 'Добавление')
         tabs.addTab(self.find_duplicates_tab, 'Поиск дубликатов')
-        tabs.addTab(QWidget(), 'Синхронизация')
+        tabs.addTab(self.sync_tab, 'Синхронизация')
 
         self.setCentralWidget(tabs)
 

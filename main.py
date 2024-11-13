@@ -2,9 +2,9 @@ import logging
 import sys
 
 from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTabWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget
 
-from app import MainTab, FindDuplicatesTab, ExpansionTab
+from app import MainTab, FindDuplicatesTab, ExpansionTab, SynchronizationTab
 from db import DBController
 from settings import Settings
 
@@ -12,6 +12,7 @@ from settings import Settings
 # TODO
 #       По переписывать тестики.
 #       Подкорректировать settings, возможно убрать extension.
+#       Добавить аннотации. Везде.
 #       Next:
 #               "Синхронизация"
 #               В тестах добавить строчки для восстановления тестовых файлов (скорее всего нужно будет сделать через
@@ -31,6 +32,7 @@ class MainWindow(QMainWindow):
         self.main_tab = MainTab(self.settings, self.db)
         self.expansion_tab = ExpansionTab(self.settings, self.db)
         self.find_duplicates_tab = FindDuplicatesTab(self.settings, self.db)
+        self.sync_tab = SynchronizationTab(self.settings, self.db)
 
         self.set_window_parameters()
 
@@ -45,7 +47,7 @@ class MainWindow(QMainWindow):
         tabs.addTab(self.main_tab, 'Изменение тегов')
         tabs.addTab(self.expansion_tab, 'Добавление')
         tabs.addTab(self.find_duplicates_tab, 'Поиск дубликатов')
-        tabs.addTab(QWidget(), 'Синхронизация')
+        tabs.addTab(self.sync_tab, 'Синхронизация')
 
         self.setCentralWidget(tabs)
 

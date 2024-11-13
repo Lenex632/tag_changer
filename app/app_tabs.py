@@ -272,3 +272,37 @@ class ExpansionTab(QWidget):
                 to_path = Path(to_dir, song_data.file_path)
                 to_path.parent.mkdir(parents=True, exist_ok=True)
                 from_path.rename(to_path)
+
+
+class SynchronizationTab(QWidget):
+    def __init__(self, settings: Settings, db: DBController):
+        super().__init__()
+        self.settings = settings
+        self.db = db
+
+        self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
+        self.sync_dir_widget = DirWidget(self.settings, Directories.sync_dir)
+        self.sync_libraries_widget = QWidget()
+        self.buttons_widget = QWidget()
+        # self.sync_libraries_widget = SyncLibrariesWidget(self.settings, self.db)
+
+        self.main_layout = QVBoxLayout()
+        self.create_layout()
+
+    def create_layout(self):
+        self.main_layout.addWidget(self.target_dir_widget)
+        self.main_layout.addWidget(self.sync_dir_widget)
+        self.main_layout.addWidget(self.sync_libraries_widget)
+        self.main_layout.addWidget(self.buttons_widget)
+
+        self.setLayout(self.main_layout)
+
+    def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle('Синхронизация')
+        dlg.setText(msg)
+        dlg.exec()
+
+
+class SyncDialog(QDialog):
+    pass

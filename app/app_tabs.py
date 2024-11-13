@@ -86,10 +86,9 @@ class MainTab(QWidget):
 
     def start(self):
         """Запуск скрипта"""
-        self.save_settings()
-        target_dir = self.settings.target_dir
-        artist_dirs = self.settings.artist_dirs
-        library = self.settings.current_library
+        target_dir = self.target_dir_widget.fild.toPlainText()
+        artist_dirs = self.artist_dirs_widget.fild.toPlainText().split('\n')
+        library = self.libraries_widget.libraries_list.currentText()
         db_update = True if self.main_button_widget.db_update_checkbox.checkState() is Qt.CheckState.Checked else False
 
         if not target_dir or (not library and db_update):
@@ -122,10 +121,6 @@ class FindDuplicatesTab(QWidget):
                 выбирать. В окне кнопки 'применить' и 'отменить'. После 'применить' все непомеченные - остаются,
                 помеченные - удаляются с диска. Пути ищутся исходя из заданной target_dir и найденных относительных
                 путей файлов.
-    TODO
-        добавить выбор папки, что бы из неё можно было бы сразу же дубликаты и удалить
-        ЛИБО
-        реализовать это как часть синхронизации
     """
     def __init__(self, settings: Settings, db: DBController):
         """Класс главного окна"""
@@ -137,8 +132,9 @@ class FindDuplicatesTab(QWidget):
         self.db = db
 
         # Создание виджетов и макета для их размещения
-        self.find_duplicates_buttons_widget = FindDuplicatesButtons()
+        self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
         self.libraries_widget = LibrariesWidget(self.settings, self.db)
+        self.find_duplicates_buttons_widget = FindDuplicatesButtons()
         self.main_layout = QVBoxLayout()
         self.create_layout()
 
@@ -147,6 +143,7 @@ class FindDuplicatesTab(QWidget):
         self.find_duplicates_buttons_widget.readme_button.clicked.connect(self.open_readme)
         self.find_duplicates_buttons_widget.start_button.clicked.connect(self.start)
 
+        self.main_layout.addWidget(self.target_dir_widget)
         self.main_layout.addWidget(self.libraries_widget)
         self.main_layout.addWidget(self.find_duplicates_buttons_widget)
         self.setLayout(self.main_layout)
@@ -163,7 +160,7 @@ class FindDuplicatesTab(QWidget):
         dlg.exec()
 
     def show_results(self, duplicates, library):
-        dlg = FindDuplicatesDialog(self.settings, self.db, duplicates, library)
+        dlg = FindDuplicatesDialog(self.target_dir_widget.fild.toPlainText(), self.db, duplicates, library)
         dlg.exec()
 
     def start(self):
@@ -183,10 +180,10 @@ class FindDuplicatesTab(QWidget):
 
 
 class FindDuplicatesDialog(QDialog):
-    def __init__(self, settings: Settings, db: DBController, duplicates: list | tuple, library: str):
+    def __init__(self, target_dir: str, db: DBController, duplicates: list | tuple, library: str):
         super().__init__()
         self.logger = logging.getLogger('App')
-        self.settings = settings
+        self.target_dir = target_dir
         self.db = db
 
         self.duplicates = duplicates
@@ -213,7 +210,7 @@ class FindDuplicatesDialog(QDialog):
         with self.db:
             for idx, file_path in items:
                 self.db.delete(idx, self.library)
-                full_path = Path(self.settings.target_dir, file_path)
+                full_path = Path(self.target_dir, file_path)
                 full_path.unlink(missing_ok=True)
         self.close()
 

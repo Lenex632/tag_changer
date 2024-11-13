@@ -14,7 +14,11 @@ from settings import Settings
 #       Подкорректировать settings, возможно убрать extension.
 #       Next:
 #               "Синхронизация"
-# TODO остались в: app_tubs.py, tag_changer.py, db_controller.py
+#               В тестах добавить строчки для восстановления тестовых файлов (скорее всего нужно будет сделать через
+#                   threading):
+#                       rm -f test_from_dir/, test_to_dir/, test_target_dir
+#                       git restore test_from_dir/, test_to_dir/, test_target_dir
+# TODO остались в: tag_changer.py, db_controller.py
 class MainWindow(QMainWindow):
     def __init__(self):
         """Класс главного окна"""

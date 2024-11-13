@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QTreeWidget,
     QComboBox,
 )
+
 from settings import Settings
 from db import DBController
 

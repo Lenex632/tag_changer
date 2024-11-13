@@ -131,7 +131,7 @@ class TagChanger:
                     self.logger.debug(f'AudioFile has no images: "{file_path}"')
                     continue
                 except AttributeError as e:
-                    # TODO может вызваться, когда у song вообще нет тегов images
+                    # может вызваться, когда у song вообще нет тегов images
                     self.logger.error(f'Unknown error: {e}')
                     continue
                 except OSError:

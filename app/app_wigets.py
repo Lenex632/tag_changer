@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 
 from PyQt6.QtCore import Qt
@@ -23,7 +24,8 @@ from db import DBController
 
 class Directories(Enum):
     target_dir = 'Укажите путь к исходной папке'
-    sync_dir = 'Укажите путь к папке, с которой хотите синхронизироваться'
+    sync1_dir = 'Укажите путь к первой папке для синхронизации'
+    sync2_dir = 'Укажите путь ко второй папке для синхронизации'
     from_dir = 'Укажите путь к папке, из которой хотите забрать новые файлы'
     to_dir = 'Укажите путь к папке, в которую хотите переместить новые файлы'
 
@@ -109,9 +111,10 @@ class ArtistDirsWidget(QWidget):
 
 
 class MainButtons(QWidget):
-    def __init__(self):
+    def __init__(self, is_sync_tab: bool = False):
         """Класс для работы с кнопками в главном окне"""
         super().__init__()
+        self.is_sync_tab = is_sync_tab
         self.db_update_checkbox = QCheckBox('Обновить базу данных основываясь на обработанных данных')
         self.readme_button = QPushButton('Открыть ReadMe')
         self.reset_settings_button = QPushButton('Сбросить настройки')
@@ -123,7 +126,8 @@ class MainButtons(QWidget):
     def create_layout(self):
         """Создаёт виджет для размещения в окне"""
         layout = QGridLayout()
-        layout.addWidget(self.db_update_checkbox, 0, 0, 1, 2)
+        if not self.is_sync_tab:
+            layout.addWidget(self.db_update_checkbox, 0, 0, 1, 2)
         layout.addWidget(self.readme_button, 1, 0)
         layout.addWidget(self.reset_settings_button, 2, 0)
         layout.addWidget(self.save_settings_button, 2, 1)
@@ -277,3 +281,72 @@ class LibrariesWidget(QWidget):
                 self.libraries_list.removeItem(items[library])
                 with self.db:
                     self.db.drop_table(library)
+
+
+class SyncLibrariesWidget(QWidget):
+    def __init__(self, settings: Settings, db: DBController):
+        self.logger = logging.getLogger('App')
+        super().__init__()
+
+        self.settings = settings
+        self.db = db
+        self.sync1_library_list = QComboBox()
+        self.sync2_library_list = QComboBox()
+
+        self.create_layout()
+
+    def create_layout(self):
+        layout = QGridLayout()
+        layout.addWidget(QLabel('Выберите библиотеки для синхронизации'), 0, 0)
+        layout.addWidget(QLabel('Библиотека 1'), 1, 0)
+        layout.addWidget(self.sync1_library_list, 1, 2)
+        layout.addWidget(QLabel('Библиотека 2'), 2, 0)
+        layout.addWidget(self.sync2_library_list, 2, 2)
+
+        self.reload_libraries_lists()
+
+        self.setLayout(layout)
+
+    def reload_libraries_lists(self):
+        with self.db:
+            libraries_list = self.db.get_tables_list()
+
+        self.sync1_library_list.clear()
+        self.sync1_library_list.addItem('')
+        self.sync1_library_list.addItems(libraries_list)
+
+        self.sync2_library_list.clear()
+        self.sync2_library_list.addItem('')
+        self.sync2_library_list.addItems(libraries_list)
+
+
+class SyncResult(QWidget):
+    def __init__(self, differance):
+        super().__init__()
+
+        self.main_tree = QTreeWidget()
+        self.difference_list = differance
+
+        self.create_layout()
+
+    def create_layout(self):
+        layout = QVBoxLayout()
+
+        self.setLayout(layout)
+
+
+class DialogButtons(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.ok_button = QPushButton()
+        self.cansel_button = QPushButton()
+
+        self.create_layout()
+
+    def create_layout(self):
+        layout = QHBoxLayout()
+        layout.addWidget(self.ok_button)
+        layout.addWidget(self.cansel_button)
+
+        self.setLayout(layout)

@@ -139,6 +139,16 @@ class DBController:
 
         return duplicates
 
+    def find_differences(self, library1, library2) -> [list, list]:
+        query = f'''
+            SELECT * 
+            FROM {library1} LEFT JOIN {library2}
+            ON {library1}.file_path = {library2}.file_path
+        '''
+        result = self.execute_and_fetch(query)
+
+        return result
+
 
 if __name__ == '__main__':
     from logger import set_up_logger_config
@@ -148,11 +158,11 @@ if __name__ == '__main__':
 
     with db:
         db.create_table_if_not_exist('test_main')
-        dup = db.find_duplicates('test_main')
+        diff = db.find_differences('to_dir', 'main')
 
-    for t, a, g in dup:
-        print(t, a)
-        print(f'{"":*^20}')
-        for s in g:
-            idx, file_path, *_ = s
-            print(file_path)
+    print(len(diff))
+    for d in diff:
+        print(d)
+
+    with db:
+        db.drop_table('test_main')

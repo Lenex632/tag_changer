@@ -18,6 +18,8 @@ from settings import Settings
 #       Добавить аннотации. Везде.
 #       Next:
 #               "Синхронизация"
+#               Обновить README
+#               Добавить НОРМАЛЬНОЕ логирование. ВЕЗДЕ.
 #               В тестах добавить строчки для восстановления тестовых файлов (скорее всего нужно будет сделать через
 #                   threading):
 #                       rm -f test_from_dir/, test_to_dir/, test_target_dir
@@ -70,7 +72,7 @@ class MainWindow(QMainWindow):
         self.main_tab.libraries_widget.reload_libraries_list()
         self.expansion_tab.libraries_widget.reload_libraries_list()
         self.find_duplicates_tab.libraries_widget.reload_libraries_list()
-        # self.sync_tab.libraries_widget.reload_libraries_list()
+        self.sync_tab.sync_libraries_widget.reload_libraries_lists()
 
 
 if __name__ == '__main__':

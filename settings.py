@@ -18,8 +18,11 @@ class Settings:
         self.current_library = None
         self.to_dir = ''
         self.from_dir = ''
-        self.sync_dir = None
-        self.sync_library = None
+        self.sync1_dir = None
+        self.sync2_dir = None
+        self.sync1_library = None
+        self.sync2_library = None
+
         self.set_defaults()
 
     def set_defaults(self) -> None:
@@ -32,8 +35,10 @@ class Settings:
 
         self.current_library = self._settings.get(section='libraries', option='current_library', fallback='')
 
-        self.sync_dir = self._settings.get(section='sync', option='sync_dir', fallback='')
-        self.sync_library = self._settings.get(section='sync', option='sync_library', fallback='')
+        self.sync1_dir = self._settings.get(section='sync', option='sync1_dir', fallback='')
+        self.sync2_dir = self._settings.get(section='sync', option='sync2_dir', fallback='')
+        self.sync1_library = self._settings.get(section='sync', option='sync1_library', fallback='')
+        self.sync2_library = self._settings.get(section='sync', option='sync2_library', fallback='')
 
     def set_target_dir(self, value: str) -> None:
         """Настраивает значение target_dir"""
@@ -50,15 +55,25 @@ class Settings:
         self._settings.set(section='libraries', option='current_library', value=value)
         self.current_library = value
 
-    def set_sync_dir(self, value: str) -> None:
-        """Настраивает значение sync_dir"""
-        self._settings.set(section='sync', option='sync_dir', value=value)
-        self.artist_dirs = value
+    def set_sync1_dir(self, value: str) -> None:
+        """Настраивает значение sync1_dir"""
+        self._settings.set(section='sync', option='sync1_dir', value=value)
+        self.sync1_dir = value
 
-    def set_sync_library(self, value: str) -> None:
-        """Настраивает значение sync_library"""
-        self._settings.set(section='sync', option='sync_library', value=value)
-        self.sync_library = value
+    def set_sync2_dir(self, value: str) -> None:
+        """Настраивает значение sync2_dir"""
+        self._settings.set(section='sync', option='sync2_dir', value=value)
+        self.sync2_dir = value
+
+    def set_sync1_library(self, value: str) -> None:
+        """Настраивает значение sync1_library"""
+        self._settings.set(section='sync', option='sync1_library', value=value)
+        self.sync1_library = value
+
+    def set_sync2_library(self, value: str) -> None:
+        """Настраивает значение sync2_library"""
+        self._settings.set(section='sync', option='sync2_library', value=value)
+        self.sync2_library = value
 
     def save_settings(self) -> None:
         """Сохраняет настройки в файл settings.ini"""
@@ -74,6 +89,8 @@ class Settings:
 
     def clean_sync_data(self) -> None:
         """Сбрасывает настройки синхронизации и сохраняет их в файл"""
-        self.set_sync_dir('')
-        self.set_sync_library('')
+        self.set_sync1_dir('')
+        self.set_sync2_dir('')
+        self.set_sync1_library('')
+        self.set_sync2_library('')
         self.save_settings()

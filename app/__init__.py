@@ -8,4 +8,6 @@ from app.app_wigets import (
     FindDuplicatesResults,
     ExpansionButtons,
     LibrariesWidget,
+    SyncLibrariesWidget,
+    SyncResult,
 )

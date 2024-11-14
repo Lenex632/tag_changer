@@ -13,6 +13,7 @@ from .app_wigets import (
     FindDuplicatesResults,
     ExpansionButtons,
     LibrariesWidget,
+    SyncLibrariesWidget,
 )
 from db import DBController
 from tag_changer import TagChanger
@@ -280,18 +281,22 @@ class SynchronizationTab(QWidget):
         self.settings = settings
         self.db = db
 
-        self.target_dir_widget = DirWidget(self.settings, Directories.target_dir)
-        self.sync_dir_widget = DirWidget(self.settings, Directories.sync_dir)
-        self.sync_libraries_widget = QWidget()
-        self.buttons_widget = QWidget()
-        # self.sync_libraries_widget = SyncLibrariesWidget(self.settings, self.db)
+        self.sync1_dir_widget = DirWidget(self.settings, Directories.sync1_dir)
+        self.sync2_dir_widget = DirWidget(self.settings, Directories.sync2_dir)
+        self.sync_libraries_widget = SyncLibrariesWidget(self.settings, self.db)
+        self.buttons_widget = MainButtons(is_sync_tab=True)
 
         self.main_layout = QVBoxLayout()
         self.create_layout()
 
     def create_layout(self):
-        self.main_layout.addWidget(self.target_dir_widget)
-        self.main_layout.addWidget(self.sync_dir_widget)
+        self.buttons_widget.readme_button.clicked.connect(self.open_readme)
+        self.buttons_widget.reset_settings_button.clicked.connect(self.reset_settings)
+        self.buttons_widget.save_settings_button.clicked.connect(self.save_settings)
+        self.buttons_widget.start_button.clicked.connect(self.start)
+
+        self.main_layout.addWidget(self.sync1_dir_widget)
+        self.main_layout.addWidget(self.sync2_dir_widget)
         self.main_layout.addWidget(self.sync_libraries_widget)
         self.main_layout.addWidget(self.buttons_widget)
 
@@ -303,6 +308,63 @@ class SynchronizationTab(QWidget):
         dlg.setText(msg)
         dlg.exec()
 
+    def open_readme(self):
+        self.show_info_dialog('Open README')
+
+    def reset_settings(self):
+        """Сброс настроек"""
+        self.sync1_dir_widget.fild.setText('')
+        self.sync2_dir_widget.fild.setText('')
+        self.sync_libraries_widget.sync1_library_list.setCurrentIndex(0)
+        self.sync_libraries_widget.sync2_library_list.setCurrentIndex(0)
+        self.settings.clean_sync_data()
+
+        self.show_info_dialog('Настройки сброшены')
+
+    def save_settings(self):
+        """Сохранение настроек"""
+        dir1 = self.sync1_dir_widget.fild.toPlainText()
+        dir2 = self.sync2_dir_widget.fild.toPlainText()
+        library1 = self.sync_libraries_widget.sync1_library_list.currentText()
+        library2 = self.sync_libraries_widget.sync2_library_list.currentText()
+
+        self.settings.set_sync1_dir(dir1)
+        self.settings.set_sync2_dir(dir2)
+        self.settings.set_sync1_library(library1)
+        self.settings.set_sync2_library(library2)
+        self.settings.save_settings()
+
+        self.show_info_dialog('Настройки сохранены')
+
+    def start(self):
+        dir1 = self.sync1_dir_widget.fild.toPlainText()
+        dir2 = self.sync2_dir_widget.fild.toPlainText()
+        library1 = self.sync_libraries_widget.sync1_library_list.currentText()
+        library2 = self.sync_libraries_widget.sync2_library_list.currentText()
+
 
 class SyncDialog(QDialog):
-    pass
+    def __init__(self, dir1: str, dir2: str, library1: str, library2: str):
+        super().__init__()
+
+        self.dir1 = dir1
+        self.dir2 = dir2
+        self.library1 = library1
+        self.library2 = library2
+
+        self.result1_widget = QWidget()
+        self.result2_widget = QWidget()
+        self.buttons_widget = QWidget()
+
+        self.create_layout()
+
+    def create_layout(self):
+        self.setFixedSize(QSize(800, 500))
+        self.setWindowTitle('Синхронизация')
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.result1_widget)
+        layout.addWidget(self.result2_widget)
+        layout.addWidget(self.buttons_widget)
+
+        self.setLayout(layout)

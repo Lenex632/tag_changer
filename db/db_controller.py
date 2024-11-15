@@ -141,13 +141,19 @@ class DBController:
 
     def find_differences(self, library1, library2) -> [list, list]:
         query = f'''
-            SELECT * 
-            FROM {library1} LEFT JOIN {library2}
+            SELECT {library1}.file_path, {library2}.file_path 
+            FROM {library1} FULL JOIN {library2}
             ON {library1}.file_path = {library2}.file_path
         '''
         result = self.execute_and_fetch(query)
+        diff1, diff2 = [], []
+        for dir1, dir2 in result:
+            if dir1 is None:
+                diff1.append(dir2)
+            if dir2 is None:
+                diff2.append(dir1)
 
-        return result
+        return diff1, diff2
 
 
 if __name__ == '__main__':
@@ -157,12 +163,11 @@ if __name__ == '__main__':
     db = DBController()
 
     with db:
-        db.create_table_if_not_exist('test_main')
-        diff = db.find_differences('to_dir', 'main')
+        dif1, dif2 = db.find_differences('main', 'sync')
 
-    print(len(diff))
-    for d in diff:
+    print(len(dif1))
+    for d in dif1:
         print(d)
-
-    with db:
-        db.drop_table('test_main')
+    print(len(dif2))
+    for d in dif2:
+        print(d)

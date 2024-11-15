@@ -10,4 +10,5 @@ from app.app_wigets import (
     LibrariesWidget,
     SyncLibrariesWidget,
     SyncResult,
+    DialogButtons,
 )

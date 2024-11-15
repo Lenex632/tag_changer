@@ -14,6 +14,8 @@ from .app_wigets import (
     ExpansionButtons,
     LibrariesWidget,
     SyncLibrariesWidget,
+    SyncResult,
+    DialogButtons,
 )
 from db import DBController
 from tag_changer import TagChanger
@@ -342,6 +344,9 @@ class SynchronizationTab(QWidget):
         library1 = self.sync_libraries_widget.sync1_library_list.currentText()
         library2 = self.sync_libraries_widget.sync2_library_list.currentText()
 
+        dlg = SyncDialog(dir1, dir2, library1, library2)
+        dlg.exec()
+
 
 class SyncDialog(QDialog):
     def __init__(self, dir1: str, dir2: str, library1: str, library2: str):
@@ -354,7 +359,7 @@ class SyncDialog(QDialog):
 
         self.result1_widget = QWidget()
         self.result2_widget = QWidget()
-        self.buttons_widget = QWidget()
+        self.buttons_widget = DialogButtons()
 
         self.create_layout()
 

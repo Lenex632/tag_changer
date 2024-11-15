@@ -332,6 +332,7 @@ class SyncResult(QWidget):
     def create_layout(self):
         layout = QVBoxLayout()
 
+        layout.addWidget(self.main_tree)
         self.setLayout(layout)
 
 
@@ -339,8 +340,8 @@ class DialogButtons(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.ok_button = QPushButton()
-        self.cansel_button = QPushButton()
+        self.ok_button = QPushButton('Применить')
+        self.cansel_button = QPushButton('Отменить')
 
         self.create_layout()
 

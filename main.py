@@ -9,7 +9,7 @@ from db import DBController
 from settings import Settings
 
 
-# TODO
+# TODO:
 #       По переписывать тестики.
 #       Подкорректировать settings, возможно убрать extension.
 #       Починить бню, когда попадаются файлы НЕ MP3
@@ -24,7 +24,7 @@ from settings import Settings
 #                   threading):
 #                       rm -f test_from_dir/, test_to_dir/, test_target_dir
 #                       git restore test_from_dir/, test_to_dir/, test_target_dir
-# TODO остались в: tag_changer.py, db_controller.py
+# TODO: остались в: tag_changer.py, db_controller.py
 class MainWindow(QMainWindow):
     def __init__(self):
         """Класс главного окна"""
@@ -39,9 +39,6 @@ class MainWindow(QMainWindow):
         self.find_duplicates_tab = FindDuplicatesTab(self.settings, self.db)
         self.sync_tab = SynchronizationTab(self.settings, self.db)
 
-        self.set_window_parameters()
-
-    def set_window_parameters(self):
         """Настройка параметров окна"""
         self.setWindowTitle('Tag Changer')
         self.setFixedSize(QSize(800, 500))

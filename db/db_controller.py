@@ -50,7 +50,7 @@ class DBController:
     def create_table_if_not_exist(self, table: str) -> None:
         """Создаёт базу данных и таблицу table, если такие не существуют"""
         table_columns = f'{", ".join(f"{key} {value}" for key, value in self.table_model.items())}'
-        # TODO мб подправить хардкод с file_path
+        # TODO: мб подправить хардкод с file_path
         query = (f'CREATE TABLE IF NOT EXISTS {table} ({table_columns}, '
                  f'CONSTRAINT unique_file_path UNIQUE (file_path))')
         self.execute(query)
@@ -140,34 +140,51 @@ class DBController:
         return duplicates
 
     def find_differences(self, library1, library2) -> [list, list]:
+        query = f'''SELECT file_path from {library1};'''
+        dif1 = self.execute_and_fetch(query)
+        query = f'''SELECT file_path from {library2};'''
+        dif2 = self.execute_and_fetch(query)
+
+        print(len(dif1), '---------------------')
+        for d in dif1:
+            print(d)
+        print(len(dif2), '---------------------')
+        for d in dif2:
+            print(d)
+
         query = f'''
-            SELECT {library1}.file_path, {library2}.file_path 
-            FROM {library1} FULL JOIN {library2}
+            SELECT {library1}.file_path, {library2}.file_path
+            FROM {library1} LEFT JOIN {library2}
             ON {library1}.file_path = {library2}.file_path
+            UNION
+            SELECT {library1}.file_path, {library2}.file_path
+            FROM {library2} LEFT JOIN {library1}
+            ON {library1}.file_path = {library2}.file_path;
         '''
         result = self.execute_and_fetch(query)
-        diff1, diff2 = [], []
+        print('------------------------------------')
+        for res in result:
+            print(res)
+
+        dif1, dif2 = [], []
         for dir1, dir2 in result:
             if dir1 is None:
-                diff1.append(dir2)
+                dif1.append(dir2)
             if dir2 is None:
-                diff2.append(dir1)
+                dif2.append(dir1)
+        print('------------------------------------')
+        for d in dif1:
+            print(d)
+        print('------------------------------------')
+        for d in dif2:
+            print(d)
 
-        return diff1, diff2
+        return dif1, dif2
 
 
 if __name__ == '__main__':
     from logger import set_up_logger_config
     set_up_logger_config()
 
-    db = DBController()
-
-    with db:
-        dif1, dif2 = db.find_differences('main', 'sync')
-
-    print(len(dif1))
-    for d in dif1:
-        print(d)
-    print(len(dif2))
-    for d in dif2:
-        print(d)
+    with DBController() as db:
+        db.find_differences('main', 'sync')

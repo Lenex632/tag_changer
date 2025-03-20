@@ -4,6 +4,8 @@ from pathlib import Path
 
 
 class Settings:
+    # TODO: Добавить все поля, а не только основные. Порабатсть с sync.
+    #       Глянуть что там с секциями и как создавать default.
     def __init__(self):
         """Класс для работы с файлом настроек и конфигураций"""
         self.logger = logging.getLogger('Settings')
@@ -29,6 +31,10 @@ class Settings:
         """Настраивает дефолтные значения из settings.ini при запуске программы"""
         if not self._settings.has_section('main'):
             self._settings.add_section('main')
+        if not self._settings.has_section('libraries'):
+            self._settings.add_section('libraries')
+        if not self._settings.has_section('sync'):
+            self._settings.add_section('sync')
 
         self.target_dir = self._settings.get(section='main', option='target_dir', fallback=None)
         self.artist_dirs = self._settings.get(section='main', option='artist_dirs', fallback='').split('\n')

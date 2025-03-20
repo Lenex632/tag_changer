@@ -81,7 +81,7 @@ class MainTab(QWidget):
         self.show_info_dialog('Настройки сохранены')
         self.logger.info('Настройки сохранены')
 
-    def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
+    def show_info_dialog(self, msg: str = 'Произошло что-то неожиданное'):
         dlg = QMessageBox(self)
         dlg.setWindowTitle('Tag Changer')
         dlg.setText(msg)
@@ -156,7 +156,7 @@ class FindDuplicatesTab(QWidget):
         self.show_info_dialog('Открытие README')
         self.logger.info('Открытие README')
 
-    def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
+    def show_info_dialog(self, msg: str = 'Произошло что-то неожиданное'):
         dlg = QMessageBox(self)
         dlg.setWindowTitle('Поиск дубликатов')
         dlg.setText(msg)
@@ -304,7 +304,7 @@ class SynchronizationTab(QWidget):
 
         self.setLayout(self.main_layout)
 
-    def show_info_dialog(self, msg: 'Произошло что-то неожиданное'):
+    def show_info_dialog(self, msg: str = 'Произошло что-то неожиданное'):
         dlg = QMessageBox(self)
         dlg.setWindowTitle('Синхронизация')
         dlg.setText(msg)

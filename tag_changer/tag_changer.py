@@ -8,7 +8,7 @@ from db import DBController
 from model import SongData
 
 
-# TODO
+# TODO:
 #     Посмотреть библиотеки для парсинга и почитать о компиляторах, возможно получится упростить процедуру обработки
 #     имён фалов.
 #     МБ сделать обложки альбомов не удаляемыми, что бы потом можно было другим способом пройтись, посмотреть теги и
@@ -23,7 +23,7 @@ class TagChanger:
         self.pattern_to_number = re.compile(r'^\d+(\W | \W | |\)|\) )')
         # feat
         self.pattern_to_feat = re.compile(r'(\(|\s)(feat|Feat|ft|Ft)(\. |\.| )(?P<feats>.*?)(\)|$)')
-        # опенинги/эндинги TODO в будущем мб можно сделать под кастомные запросы
+        # опенинги/эндинги TODO: в будущем мб можно сделать под кастомные запросы
         self.pattern_to_special = re.compile(r'\((OP|EN)(\d? |\d).*?\)')
         # мусорные скобки
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
@@ -62,7 +62,7 @@ class TagChanger:
 
         return artist, feat
 
-    # TODO мб добавить '&' (Artist & OtherArtist - Title)
+    # TODO: мб добавить '&' (Artist & OtherArtist - Title)
     def find_feats(self, target: str) -> [str, list[str]]:
         """Поиск соисполнителей в title и в artist"""
         feat = []
@@ -241,7 +241,7 @@ class TagChanger:
         self.delete_images(self.target_dir)
 
 
-if __name__ == '__main__':
+def main() -> None:
     from logger import set_up_logger_config
     set_up_logger_config()
 
@@ -257,8 +257,24 @@ if __name__ == '__main__':
         for item in items:
             db.insert(item, 'test_main')
 
+
+if __name__ == '__main__':
+
+    # main()
+
     # проверки и возможные функции для вычисления или извлечения данных
-    # logger = logging.getLogger('TagChanger')
-    # music = eyed3.load('C:\\code\\tag_changer\\test_tag_change\\'
-    #                    'Legend\\Saint Asonia\\Flawed Design\\Saint Asonia,Sharon den Adel - Sirens.mp3')
-    # logger.info(music.tag.images._fs[b'APIC'][0].picture_type)
+    # file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Waste My Time.mp3'
+    file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
+    # file_path = 'C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\Flawed Design\\Saint Asonia,Sharon den Adel - Sirens.mp3'
+    song = eyed3.load(file_path)
+    print(song.tag.images._fs[b'APIC'][0].picture_type)
+
+    # song.initTag()
+    # song.tag.remove(file_path)
+    # print(song.tag.images._fs[b'APIC'][0].picture_type)
+
+    image = song.tag.images[0].image_data
+    image_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/cover2.jpg'
+    with open(image_path, 'wb+') as album_cover:
+        album_cover.write(image)
+

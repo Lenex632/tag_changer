@@ -1,0 +1,8 @@
+{
+    "files": [
+        "main.py",
+        "ui/main_window.ui",
+        "ui/duplicates_dlg.ui",
+        "ui/sync_dlg.ui"
+    ]
+}

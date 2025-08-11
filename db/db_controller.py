@@ -44,7 +44,6 @@ class DBController:
         cursor.execute(query)
         result = cursor.fetchall()
         cursor.close()
-
         return result
 
     def create_table_if_not_exist(self, table: str) -> None:
@@ -60,7 +59,6 @@ class DBController:
         query = 'SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"'
         result = self.execute_and_fetch(query)
         result = list(map(lambda x: x[0], result))
-
         return result
 
     def clear_table(self, table: str) -> None:
@@ -107,7 +105,6 @@ class DBController:
             query = f'SELECT * FROM {table}'
         results = self.execute_and_fetch(query)
         self.logger.info(f'{len(results)} rows was found in table "{table}" for {condition=}')
-
         return results
 
     def update(self, condition: str, new: str, table: str) -> None:
@@ -188,3 +185,4 @@ if __name__ == '__main__':
 
     with DBController() as db:
         db.find_differences('main', 'sync')
+

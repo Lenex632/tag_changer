@@ -129,6 +129,3 @@ dmypy.json
 .pyre/
 
 .idea/
-target_dir/
-source_dir/
-settings.ini

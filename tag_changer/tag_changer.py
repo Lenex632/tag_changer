@@ -23,11 +23,13 @@ class TagChanger:
         self.pattern_to_number = re.compile(r'^\d+(\W | \W | |\)|\) )')
         # feat
         self.pattern_to_feat = re.compile(r'(\(|\s)(feat|Feat|ft|Ft)(\. |\.| )(?P<feats>.*?)(\)|$)')
-        # опенинги/эндинги TODO: в будущем мб можно сделать под кастомные запросы
+        # опенинги/эндинги
+        # TODO: в будущем мб можно сделать под кастомные запросы
         self.pattern_to_special = re.compile(r'\((OP|EN)(\d? |\d).*?\)')
         # мусорные скобки
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
 
+    # TODO: накой чорт я сделал эти фнкции? либо делай setter, либо записывай в класс, либо просто присваивай без лишний мишуры.
     def set_up_target_dir(self, target_dir: str):
         self.target_dir = Path(target_dir)
 
@@ -38,7 +40,6 @@ class TagChanger:
         """Удаление цифр в начале"""
         target = self.pattern_to_number.sub('', target)
         self.logger.debug(f'{target=}')
-
         return target
 
     def split_fullname(self, target: str) -> [str, str]:
@@ -48,9 +49,7 @@ class TagChanger:
         except ValueError:
             artist = ''
             title = target
-
         self.logger.debug(f'{artist=}, {title=}')
-
         return artist, title
 
     def split_artist(self, target: str) -> [str, list[str]]:
@@ -59,7 +58,6 @@ class TagChanger:
         feat = [s.strip() for s in target]
         artist = feat.pop(0)
         self.logger.debug(f'{artist=}, {feat=}')
-
         return artist, feat
 
     # TODO: мб добавить '&' (Artist & OtherArtist - Title)
@@ -67,7 +65,6 @@ class TagChanger:
         """Поиск соисполнителей в title и в artist"""
         feat = []
         match = self.pattern_to_feat.search(target)
-
         if match:
             self.logger.debug(f'{match.group()}, {match.group("feats")=}')
             target = target.replace(match.group(), '').strip()
@@ -75,27 +72,23 @@ class TagChanger:
             feat = [feat.strip() for feat in feat]
 
         self.logger.debug(f'{target=}, {feat=}')
-
         return target, feat
 
     def find_special(self, target: str) -> [str, str]:
         """Поиск опенингов/эндингов в title"""
         special = ''
         match = self.pattern_to_special.search(target)
-
         if match:
             special = match.group()
             target = target.replace(special, '').strip()
 
         self.logger.debug(f'{target=}, {special=}')
-
         return target, special
 
     def delete_brackets(self, target: str) -> str:
         """Удаление мусорных скобок"""
         target = self.pattern_to_brackets.sub('', target).strip()
         self.logger.debug(f'{target=}')
-
         return target
 
     @staticmethod
@@ -237,7 +230,6 @@ class TagChanger:
                 song_data = self.get_info_from_file(file_path)
                 self.change_tags(song_data)
                 yield song_data
-
         self.delete_images(self.target_dir)
 
 

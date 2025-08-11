@@ -1,0 +1,1114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>800</width>
+    <height>600</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>800</width>
+    <height>600</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Tag Changer</string>
+  </property>
+  <property name="windowIcon">
+   <iconset theme="QIcon::ThemeIcon::MediaTape">
+    <normaloff>.</normaloff>.</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_5">
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="main_tab">
+       <attribute name="title">
+        <string>Изменение тегов</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,1,2,1,1,0">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <spacer name="verticalSpacer_9">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="target_dir_field">
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Укажите путь к исходной папке</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QToolButton" name="target_dir_button">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Укажите папки с исполнителями для Уровня 2 (каждый с новой строки)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QTextEdit" name="artist_dir_field"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_3" columnstretch="2,1,1">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QComboBox" name="library_field"/>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="add_lib_button">
+            <property name="text">
+             <string>+</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QPushButton" name="remove_lib_button">
+            <property name="text">
+             <string>-</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="QCheckBox" name="update_lib_checkbox">
+            <property name="text">
+             <string>Обновить базу данных основываясь на обработанных данных</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="3">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Выберите библиотеку, либо создайте её</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_8">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="reset_button">
+            <property name="text">
+             <string>Сбросить настройки</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="save_button">
+            <property name="text">
+             <string>Сохранить настройки</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="readme_button">
+            <property name="text">
+             <string>Открыть Readme</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="start_button">
+            <property name="text">
+             <string>Запуск -&gt;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="add_tab">
+       <attribute name="title">
+        <string>Добавление</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1,0,2,0">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <spacer name="verticalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_7">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="to_dir_field">
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QToolButton" name="to_dir_button">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Укажите папку, в которую хотите переместить новый файлы</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_8">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="from_dir_field">
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Укажите папку, из которой хотите забрать новые файлы</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QToolButton" name="from_dir_button">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_6" columnstretch="2,1">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QComboBox" name="add_lib_field"/>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Выберите библиотеку, в которую добавятся новые элементы</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_9">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="save_button_2">
+            <property name="text">
+             <string>Сохранить настройки</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="start_button_2">
+            <property name="text">
+             <string>Запуск -&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="readme_button_2">
+            <property name="text">
+             <string>Открыть Readme</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="reset_button_2">
+            <property name="text">
+             <string>Сбросить настройки</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="duplicates_tab">
+       <attribute name="title">
+        <string>Поиск дубликатов</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="1,1,1,1,2,0">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <spacer name="verticalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_13">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="1">
+           <widget class="QToolButton" name="target_dir_button_3">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>Укажите папку, связанную с библиотекой</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="duplicates_dir_field">
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_12" columnstretch="2,1">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Выберите библиотеку, в которой хотите найти дубликаты</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QComboBox" name="duplicates_lib_field"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_7">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_10">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="save_button_3">
+            <property name="text">
+             <string>Сохранить настройки</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="start_button_3">
+            <property name="text">
+             <string>Запуск -&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="readme_button_3">
+            <property name="text">
+             <string>Открыть Readme</string>
+            </property>
+            <property name="checkable">
+             <bool>false</bool>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="reset_button_3">
+            <property name="text">
+             <string>Сбросить настройки</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="sync_tab">
+       <attribute name="title">
+        <string>Синхронизация</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,1,2,1,0">
+        <property name="spacing">
+         <number>10</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <spacer name="verticalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>63</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_14">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Укажите путь к папке 1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="sync_dir_field_1">
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QToolButton" name="sync_dir_button_1">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_15">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="sync_dir_field_2">
+            <property name="tabletTracking">
+             <bool>false</bool>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="placeholderText">
+             <string/>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_11">
+            <property name="text">
+             <string>Укажите путь к папке 2</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QToolButton" name="sync_dir_button_2">
+            <property name="text">
+             <string>...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_16" columnstretch="1,2">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_14">
+            <property name="text">
+             <string>Библиотека папки 2</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_13">
+            <property name="text">
+             <string>Библиотека папки 1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>Выберите библиотеки для синхронизации</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="sync_lib_field_1"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="sync_lib_field_2">
+            <property name="placeholderText">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>129</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <layout class="QGridLayout" name="gridLayout_11">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>10</number>
+          </property>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="save_button_4">
+            <property name="text">
+             <string>Сохранить настройки</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="start_button_4">
+            <property name="text">
+             <string>Запуск -&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="readme_button_4">
+            <property name="text">
+             <string>Открыть Readme</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="reset_button_4">
+            <property name="text">
+             <string>Сбросить настройки</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_5">
+       <attribute name="title">
+        <string>test</string>
+       </attribute>
+       <widget class="QTreeWidget" name="treeWidget">
+        <property name="geometry">
+         <rect>
+          <x>410</x>
+          <y>70</y>
+          <width>256</width>
+          <height>192</height>
+         </rect>
+        </property>
+        <column>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </column>
+        <item>
+         <property name="text">
+          <string>Новый элемент1</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Новый дочерний элемент11</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Новый дочерний элемент12</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Новый дочерний элемент13</string>
+          </property>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Новый элемент2</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>Новый дочерний элемент21</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Новый дочерний элемент22</string>
+          </property>
+         </item>
+        </item>
+        <item>
+         <property name="text">
+          <string>Новый элемент3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Новый элемент4</string>
+         </property>
+        </item>
+       </widget>
+       <widget class="QTabWidget" name="tabWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>590</x>
+          <y>290</y>
+          <width>127</width>
+          <height>191</height>
+         </rect>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="tabPosition">
+         <enum>QTabWidget::North</enum>
+        </property>
+        <property name="tabShape">
+         <enum>QTabWidget::Rounded</enum>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <property name="usesScrollButtons">
+         <bool>false</bool>
+        </property>
+        <property name="documentMode">
+         <bool>false</bool>
+        </property>
+        <property name="tabsClosable">
+         <bool>false</bool>
+        </property>
+        <property name="movable">
+         <bool>false</bool>
+        </property>
+        <property name="tabBarAutoHide">
+         <bool>false</bool>
+        </property>
+        <widget class="QWidget" name="tab_6">
+         <attribute name="title">
+          <string>Tab 1</string>
+         </attribute>
+        </widget>
+        <widget class="QWidget" name="tab_7">
+         <attribute name="title">
+          <string>Tab 2</string>
+         </attribute>
+        </widget>
+       </widget>
+       <widget class="QListWidget" name="listWidget">
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>150</y>
+          <width>256</width>
+          <height>192</height>
+         </rect>
+        </property>
+        <property name="dragEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="dragDropOverwriteMode">
+         <bool>true</bool>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>Новый элемент</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Новый элемент 1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Новый элемент 2</string>
+         </property>
+        </item>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="defaultUp">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="minimumSize">
+    <size>
+     <width>800</width>
+     <height>22</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>800</width>
+     <height>22</height>
+    </size>
+   </property>
+   <property name="sizeGripEnabled">
+    <bool>false</bool>
+   </property>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>target_dir_field</tabstop>
+  <tabstop>artist_dir_field</tabstop>
+  <tabstop>library_field</tabstop>
+  <tabstop>update_lib_checkbox</tabstop>
+  <tabstop>reset_button</tabstop>
+  <tabstop>save_button</tabstop>
+  <tabstop>start_button</tabstop>
+  <tabstop>add_lib_button</tabstop>
+  <tabstop>remove_lib_button</tabstop>
+  <tabstop>readme_button</tabstop>
+  <tabstop>to_dir_field</tabstop>
+  <tabstop>add_lib_field</tabstop>
+  <tabstop>to_dir_button</tabstop>
+  <tabstop>from_dir_field</tabstop>
+  <tabstop>from_dir_button</tabstop>
+  <tabstop>save_button_2</tabstop>
+  <tabstop>start_button_2</tabstop>
+  <tabstop>readme_button_2</tabstop>
+  <tabstop>reset_button_2</tabstop>
+  <tabstop>duplicates_dir_field</tabstop>
+  <tabstop>target_dir_button_3</tabstop>
+  <tabstop>duplicates_lib_field</tabstop>
+  <tabstop>save_button_3</tabstop>
+  <tabstop>start_button_3</tabstop>
+  <tabstop>readme_button_3</tabstop>
+  <tabstop>reset_button_3</tabstop>
+  <tabstop>sync_dir_field_1</tabstop>
+  <tabstop>sync_dir_button_1</tabstop>
+  <tabstop>sync_dir_field_2</tabstop>
+  <tabstop>sync_dir_button_2</tabstop>
+  <tabstop>sync_lib_field_1</tabstop>
+  <tabstop>sync_lib_field_2</tabstop>
+  <tabstop>save_button_4</tabstop>
+  <tabstop>start_button_4</tabstop>
+  <tabstop>readme_button_4</tabstop>
+  <tabstop>reset_button_4</tabstop>
+  <tabstop>treeWidget</tabstop>
+  <tabstop>tabWidget_2</tabstop>
+  <tabstop>listWidget</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

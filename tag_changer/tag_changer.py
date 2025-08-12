@@ -109,7 +109,7 @@ class TagChanger:
             image = images[0]
             if image.stem != album:
                 image.rename(image_path)
-            self.logger.debug(f'Get image image "{str(image_path)}"')
+            self.logger.debug(f'Get image from file "{str(image_path)}"')
             return image_path
         else:
             for file_path in file_dir.iterdir():
@@ -123,9 +123,9 @@ class TagChanger:
                 except IndexError:
                     self.logger.debug(f'AudioFile has no images: "{file_path}"')
                     continue
-                except AttributeError as e:
+                except AttributeError:
                     # может вызваться, когда у song вообще нет тегов images
-                    self.logger.error(f'Unknown error: {e}')
+                    # self.logger.error(f'Unknown error: {e}')
                     continue
                 except OSError:
                     self.logger.debug(f'eyed3 try to load not an AudioFile: "{file_path}"')

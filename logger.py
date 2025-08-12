@@ -5,6 +5,9 @@ import sys
 
 file = Path(Path(__file__).parent, 'logs/tag_changer.log')
 
+# TODO:
+#   сделать, чтобы информация о строчках файла выводилась только при ошибках, либо немного разделить, потому что сейчас в INFO слишком много мусора
+#   почему-то логирование в файл не работает, надо понять почему
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": True,

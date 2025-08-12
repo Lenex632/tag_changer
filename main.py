@@ -17,12 +17,20 @@ from PySide6.QtWidgets import (
     QProgressBar
 )
 
-
 from config import AppConfig
 from tag_changer import TagChanger
 
 from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 
+# TODO:
+#   перенести все todo, настройки и прочее с прошлого файла
+#   пререписать README, тестики, скриншоты и тд.
+#   сделать init в ui
+#   подключить бд
+#   посмотреть, можно ли работу с кастомными функциями привязать в QtCreator, что бы тут не захламлять код
+#   перенести всё с old
+#   обновить logger
+#   ...
 
 dup = [
     ["name 1", "artist", ["path 1", "path 2"]],

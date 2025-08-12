@@ -1,1 +1,1 @@
-from tag_changer.tag_changer import TagChanger
+from .tag_changer import TagChanger

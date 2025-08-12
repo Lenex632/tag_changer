@@ -3,11 +3,11 @@ from pathlib import Path
 import sys
 
 
-file = Path(Path(__file__).parent, 'tag_changer.log')
+file = Path(Path(__file__).parent, 'logs/tag_changer.log')
 
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": False,
+    "disable_existing_loggers": True,
     "formatters": {
         "default": {
             "format": "[%(asctime)s] [%(levelname)s]:  %(message)s [%(filename)s::%(name)s::%(funcName)s::%(lineno)d]",
@@ -15,11 +15,7 @@ LOGGING = {
         }
     },
     "handlers": {
-        "console_handlers": {
-            "class": "logging.StreamHandler",
-            "formatter": "default",
-            "stream": sys.stdout
-        },
+        "console_handlers": {"class": "logging.StreamHandler", "formatter": "default", "stream": sys.stdout},
         "file_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "default",
@@ -31,8 +27,8 @@ LOGGING = {
     "loggers": {
         "TagChanger": {"handlers": ["console_handlers", "file_handler"], "level": "INFO"},
         "DBController": {"handlers": ["console_handlers", "file_handler"], "level": "INFO"},
-        "Settings": {"handlers": ["console_handlers", "file_handler"], "level": "DEBUG"},
-        "App": {"handlers": ["console_handlers", "file_handler"], "level": "DEBUG"},
+        "Config": {"handlers": ["console_handlers", "file_handler"], "level": "DEBUG"},
+        "UI": {"handlers": ["console_handlers", "file_handler"], "level": "DEBUG"},
     }
 }
 

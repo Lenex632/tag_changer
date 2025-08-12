@@ -223,6 +223,7 @@ class TagChanger:
 
     def start(self, directory: Path):
         """Основная выполняющая функция, которая рекурсивно пробегается по всем файлам в directory и изменяет их"""
+        self.logger.debug('hi from tag_changer')
         for file_path in directory.iterdir():
             if file_path.is_dir():
                 yield from self.start(file_path)

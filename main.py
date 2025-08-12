@@ -1,5 +1,8 @@
+import logging
 import sys
 import time
+
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -16,10 +19,9 @@ from PySide6.QtWidgets import (
 
 
 from config import AppConfig
+from tag_changer import TagChanger
 
-from ui.ui_main_window import Ui_MainWindow
-from ui.ui_duplicates_dlg import Ui_DuplicatesDlg
-from ui.ui_sync_dlg import Ui_SyncDlg
+from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 
 
 dup = [
@@ -56,9 +58,11 @@ def toggle_check_state(tree_item: QTreeWidgetItem):
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        self.logger = logging.getLogger(self.__class__.__name__)
         super().__init__()
         self.ui = Ui_MainWindow()
         self.config = AppConfig()
+        self.tag_changer = TagChanger()
 
         self.ui.setupUi(self)
         self.ui.statusBar.setContentsMargins(10, 2, 10, 5)
@@ -103,14 +107,26 @@ class MainWindow(QMainWindow):
     def start_main(self):
         progress_bar = QProgressBar()
         progress_bar.setRange(0, 100)
-        self.ui.statusBar.showMessage('start main')
-        self.ui.statusBar.addPermanentWidget(progress_bar)
-        progress_bar.show()
-        for i in range(10):
-            time.sleep(0.3)
-            progress_bar.setValue(i * 10 + 10)
-        self.ui.statusBar.clearMessage()
-        self.ui.statusBar.removeWidget(progress_bar)
+        self.ui.statusBar.showMessage('Скрипт начал работу')
+
+        td = Path(self.ui.target_dir_field.text())
+        self.tag_changer.set_up_target_dir(td)
+        self.tag_changer.set_up_artist_dirs(self.ui.artist_dir_field.toPlainText().split('\n'))
+
+        items = self.tag_changer.start(td)
+        for song_data in items:
+            self.logger.debug(f'{song_data.artist} - {song_data.title}')
+
+        # self.config.library = self.ui.library_field.currentText()
+        # self.config.update_lib = True if self.ui.update_lib_checkbox.checkState() is Qt.CheckState.Checked else False
+
+        # self.ui.statusBar.addPermanentWidget(progress_bar)
+        # progress_bar.show()
+        # for i in range(10):
+        #     time.sleep(0.3)
+        #     progress_bar.setValue(i * 10 + 10)
+        # self.ui.statusBar.removeWidget(progress_bar)
+
         self.show_message('Скрипт завершил работу')
 
     def start_duplicates(self):
@@ -336,9 +352,16 @@ class SyncDlg(QDialog):
                 print(artist, title, path)
 
 
-if __name__ == "__main__":
+def main():
+    from logger import set_up_logger_config
+    set_up_logger_config()
+
     app = QApplication(sys.argv)
     widget = MainWindow()
     widget.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
 

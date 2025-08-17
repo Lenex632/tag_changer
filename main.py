@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QProgressBar
 )
 
+from db import DBController
 from config import AppConfig
 from tag_changer import TagChanger
 
@@ -25,7 +26,6 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 # TODO:
 #   перенести все todo, настройки и прочее с прошлого файла
 #   пререписать README, тестики, скриншоты и тд.
-#   сделать init в ui
 #   подключить бд
 #   посмотреть, можно ли работу с кастомными функциями привязать в QtCreator, что бы тут не захламлять код
 #   перенести всё с old
@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.config = AppConfig()
+        self.db = DBController()
         self.tag_changer = TagChanger()
 
         self.ui.setupUi(self)
@@ -113,29 +114,48 @@ class MainWindow(QMainWindow):
         self.ui.sync_dir_button_2.clicked.connect(lambda: self.choose_dir(self.ui.sync_dir_field_2))
 
     def start_main(self):
-        progress_bar = QProgressBar()
-        progress_bar.setRange(0, 100)
+        """Запуск скрипта"""
+
         self.ui.statusBar.showMessage('Скрипт начал работу')
 
-        td = Path(self.ui.target_dir_field.text())
-        self.tag_changer.set_up_target_dir(td)
-        self.tag_changer.set_up_artist_dirs(self.ui.artist_dir_field.toPlainText().split('\n'))
+        target_dir = Path(self.ui.target_dir_field.text())
+        artist_dirs = self.ui.artist_dir_field.toPlainText().split('\n')
+        library = self.ui.library_field.currentText()
+        db_update = True if self.ui.update_lib_checkbox.checkState() is Qt.CheckState.Checked else False
 
-        items = self.tag_changer.start(td)
-        for song_data in items:
-            self.logger.debug(f'{song_data.artist} - {song_data.title}')
+        if not target_dir or (not library and db_update):
+            self.show_message('Не все данные были заполнены')
+            self.logger.info('Не все данные были заполнены')
+            return 1
 
-        # self.config.library = self.ui.library_field.currentText()
-        # self.config.update_lib = True if self.ui.update_lib_checkbox.checkState() is Qt.CheckState.Checked else False
+        self.tag_changer.set_up_target_dir(target_dir)
+        self.tag_changer.set_up_artist_dirs(artist_dirs)
 
+        # TODO: понять, что сделать с прогресс баром. зарание считать сколько песен обрабатывается достаточно сложно
+        # progress_bar = QProgressBar()
+        # progress_bar.setRange(0, 100)
         # self.ui.statusBar.addPermanentWidget(progress_bar)
         # progress_bar.show()
-        # for i in range(10):
-        #     time.sleep(0.3)
-        #     progress_bar.setValue(i * 10 + 10)
+        # progress_bar.setValue(i * 10 + 10)
         # self.ui.statusBar.removeWidget(progress_bar)
 
+        items = self.tag_changer.start(target_dir)
+        for i, song_data in enumerate(items):
+            self.logger.debug(f'{song_data.artist} - {song_data.title}')
+
+        self.logger.info('Запуск скрипта')
+        items = self.tag_changer.start(target_dir)
+        if db_update:
+            with self.db:
+                self.db.clear_table(library)
+                for song_data in items:
+                    self.db.insert(song_data, library)
+        else:
+            for song_data in items:
+                self.logger.debug(f'{song_data.artist} - {song_data.title}')
+
         self.show_message('Скрипт завершил работу')
+        self.logger.info('Скрипт завершил работу')
 
     def start_duplicates(self):
         # TODO: тут заводим функцию поиска дубликатов по бд, потом пхаем результат в класс.

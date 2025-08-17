@@ -11,20 +11,16 @@ from settings import Settings
 
 # TODO:
 #       По переписывать тестики.
-#       Подкорректировать settings, возможно убрать extension.
 #       Починить бню, когда попадаются файлы НЕ MP3
 #       Починить бню, при копировании уже существующих файлов
 #       Посмотреть что происходит с Cyberpunk, удаляются исполнители (скорее всего, потому что их нет в названии файлов)
-#       Подкорректировать settings, возможно убрать expension.
 #       Добавить аннотации. Везде.
 #       Next:
 #               "Синхронизация"
 #               Обновить README
-#               Добавить НОРМАЛЬНОЕ логирование. ВЕЗДЕ.
-#               В тестах добавить строчки для восстановления тестовых файлов (скорее всего нужно будет сделать через
-#                   threading):
-#                       rm -f test_from_dir/, test_to_dir/, test_target_dir
-#                       git restore test_from_dir/, test_to_dir/, test_target_dir
+#               В тестах добавить строчки для восстановления тестовых файлов (скорее всего нужно будет сделать через threading):
+#                       rm -f test_from_dir/, test_to_dir/, test_target_dir/
+#                       git restore test_from_dir/, test_to_dir/, test_target_dir/
 # TODO: остались в: tag_changer.py, db_controller.py
 class MainWindow(QMainWindow):
     def __init__(self):

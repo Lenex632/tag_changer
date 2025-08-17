@@ -31,7 +31,7 @@ class TagChanger:
 
     # TODO: накой чорт я сделал эти фнкции? либо делай setter, либо записывай в класс, либо просто присваивай без лишний мишуры.
     def set_up_target_dir(self, target_dir: str):
-        self.target_dir = Path(target_dir)
+        self.target_dir = target_dir
 
     def set_up_artist_dirs(self, artist_dirs: list):
         self.artist_dirs = artist_dirs
@@ -184,6 +184,7 @@ class TagChanger:
             album_dir.mkdir(parents=True, exist_ok=True)
             file_path = file_path.replace(Path(album_dir, file_path.name))
             relative_path = file_path.relative_to(self.target_dir)
+            artist = relative_path.parts[1]
         else:
             # песни в исполнителях в альбомах (level == 4)
             artist = relative_path.parts[1]

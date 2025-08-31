@@ -83,10 +83,8 @@ class DBController:
 
         keys = f'{", ".join(f"{key}" for key in song_data.__dict__.keys())}'
         values = list(song_data.__dict__.values())
-
         query = f'INSERT INTO {table} ({keys}) VALUES ({", ".join("?" for _ in values)})'
         self.execute(query, params=values)
-
         self.logger.debug(f'"{song_data.artist} - {song_data.title}" has been added to table "{table}"')
 
     def delete(self, song_id: int, table: str) -> None:

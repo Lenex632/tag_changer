@@ -30,10 +30,10 @@ class TagChanger:
         self.pattern_to_brackets = re.compile(r'([(\[].*?[)\]])(?![\s$]?\w)')
 
     # TODO: накой чорт я сделал эти фнкции? либо делай setter, либо записывай в класс, либо просто присваивай без лишний мишуры.
-    def set_up_target_dir(self, target_dir: str):
+    def set_up_target_dir(self, target_dir: str) -> None:
         self.target_dir = target_dir
 
-    def set_up_artist_dirs(self, artist_dirs: list):
+    def set_up_artist_dirs(self, artist_dirs: list) -> None:
         self.artist_dirs = artist_dirs
 
     def delete_numbers(self, target: str) -> str:
@@ -124,7 +124,7 @@ class TagChanger:
                     self.logger.debug(f'AudioFile has no images: "{file_path}"')
                     continue
                 except AttributeError:
-                    # может вызваться, когда у song вообще нет тегов images
+                    # INFO: может вызваться, когда у song вообще нет тегов images
                     # self.logger.error(f'Unknown error: {e}')
                     continue
                 except OSError:
@@ -191,15 +191,7 @@ class TagChanger:
             album = relative_path.parts[2]
         image = self.get_image(file_path.parent, album)
 
-        return SongData(
-            file_path=relative_path,
-            title=title,
-            artist=artist,
-            album=album,
-            feat=feat,
-            special=special,
-            image=image
-        )
+        return SongData(relative_path, title, artist, album, feat, special, image)
 
     def change_tags(self, song_data: SongData) -> None:
         """Сначала стирает все id3 tag из файла, а потом записывает новыми, взятыми из song_data"""
@@ -219,7 +211,6 @@ class TagChanger:
         song.tag.save()
         if song_data.image is not None:
             song_data.image = song_data.image.relative_to(self.target_dir)
-
         self.logger.info(f'"{song_data.artist}" - "{song_data.title}" successfully save in "{song_data.album}"')
 
     def start(self, directory: Path):
@@ -236,9 +227,6 @@ class TagChanger:
 
 
 def main() -> None:
-    from logger import set_up_logger_config
-    set_up_logger_config()
-
     a = TagChanger()
     a.set_up_target_dir('C:\\code\\tag_changer\\test_tag_change')
     a.set_up_artist_dirs(['Legend', 'Легенды'])
@@ -252,10 +240,7 @@ def main() -> None:
             db.insert(item, 'test_main')
 
 
-if __name__ == '__main__':
-
-    # main()
-
+def test() -> None:
     # проверки и возможные функции для вычисления или извлечения данных
     # file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Waste My Time.mp3'
     file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
@@ -271,4 +256,12 @@ if __name__ == '__main__':
     image_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/cover2.jpg'
     with open(image_path, 'wb+') as album_cover:
         album_cover.write(image)
+
+
+if __name__ == '__main__':
+    from logger import set_up_logger_config
+    set_up_logger_config()
+
+    # main()
+    test()
 

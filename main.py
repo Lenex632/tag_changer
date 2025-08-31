@@ -65,7 +65,7 @@ def toggle_check_state(tree_item: QTreeWidgetItem):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         super().__init__()
         self.ui = Ui_MainWindow()
@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
         self.ui.sync_dir_button_1.clicked.connect(lambda: self.choose_dir(self.ui.sync_dir_field_1))
         self.ui.sync_dir_button_2.clicked.connect(lambda: self.choose_dir(self.ui.sync_dir_field_2))
 
-    def start_main(self):
+    def start_main(self) -> None:
         """Запуск скрипта"""
 
         self.ui.statusBar.showMessage('Скрипт начал работу')
@@ -157,24 +157,24 @@ class MainWindow(QMainWindow):
         self.show_message('Скрипт завершил работу')
         self.logger.info('Скрипт завершил работу')
 
-    def start_duplicates(self):
+    def start_duplicates(self) -> None:
         # TODO: тут заводим функцию поиска дубликатов по бд, потом пхаем результат в класс.
         dlg = DuplicatesDlg(duplicates=dup, parent=self)
         dlg.exec()
 
-    def start_sync(self):
+    def start_sync(self) -> None:
         dlg = SyncDlg(sync_elements_1=sync_1, sync_elements_2=sync_2, parent=self)
         dlg.exec()
 
-    def show_message(self, message: str):
+    def show_message(self, message: str) -> None:
         self.ui.statusBar.showMessage(message, 4000)
 
-    def choose_dir(self, fild: QLineEdit):
+    def choose_dir(self, fild: QLineEdit) -> None:
         dlg = QFileDialog(parent=self)
         dlg.setWindowTitle('Выберите папку')
         fild.setText(dlg.getExistingDirectory() or fild.text())
 
-    def update_libraries(self):
+    def update_libraries(self) -> None:
         self.ui.library_field.clear()
         self.ui.add_lib_field.clear()
         self.ui.duplicates_lib_field.clear()
@@ -193,7 +193,7 @@ class MainWindow(QMainWindow):
         self.ui.sync_lib_field_1.setCurrentText(self.config.sync_lib_1)
         self.ui.sync_lib_field_2.setCurrentText(self.config.sync_lib_2)
 
-    def add_lib(self):
+    def add_lib(self) -> None:
         add_lib_dlg = QInputDialog(self)
         add_lib_dlg.setWindowTitle('Введите название новой библиотеки')
 
@@ -202,7 +202,7 @@ class MainWindow(QMainWindow):
             libs.append(lib)
             self.update_libraries()
 
-    def remove_lib(self):
+    def remove_lib(self) -> None:
         remove_lib_dlg = QInputDialog(self)
         remove_lib_dlg.setWindowTitle('Выберите, какую библиотеку хотите удалить')
         remove_lib_dlg.setComboBoxItems(libs)
@@ -213,7 +213,7 @@ class MainWindow(QMainWindow):
                 libs.remove(lib)
             self.update_libraries()
 
-    def update_main_settings(self):
+    def update_main_settings(self) -> None:
         self.ui.target_dir_field.setText(self.config.target_dir)
         artist_dir_value = '\n'.join(self.config.artist_dir)
         self.ui.artist_dir_field.setText(artist_dir_value)
@@ -222,14 +222,14 @@ class MainWindow(QMainWindow):
             Qt.CheckState.Checked if self.config.update_lib else Qt.CheckState.Unchecked
         )
 
-    def save_main_settings(self):
+    def save_main_settings(self) -> None:
         self.config.target_dir = self.ui.target_dir_field.text()
         self.config.artist_dir = self.ui.artist_dir_field.toPlainText().split('\n')
         self.config.library = self.ui.library_field.currentText()
         self.config.update_lib = True if self.ui.update_lib_checkbox.checkState() is Qt.CheckState.Checked else False
         self.config.update()
 
-    def reset_main_settings(self):
+    def reset_main_settings(self) -> None:
         self.config.target_dir = ''
         self.config.artist_dir = ''
         self.config.library = ''
@@ -237,53 +237,53 @@ class MainWindow(QMainWindow):
         self.config.update()
         self.update_main_settings()
 
-    def update_add_settings(self):
+    def update_add_settings(self) -> None:
         self.ui.to_dir_field.setText(self.config.to_dir)
         self.ui.from_dir_field.setText(self.config.from_dir)
         self.ui.add_lib_field.setCurrentText(self.config.add_lib)
 
-    def save_add_settings(self):
+    def save_add_settings(self) -> None:
         self.config.to_dir = self.ui.to_dir_field.text()
         self.config.from_dir = self.ui.from_dir_field.text()
         self.config.add_lib = self.ui.add_lib_field.currentText()
         self.config.update()
 
-    def reset_add_settings(self):
+    def reset_add_settings(self) -> None:
         self.config.to_dir = ''
         self.config.from_dir = ''
         self.config.add_lib = ''
         self.config.update()
         self.update_add_settings()
 
-    def update_duplicate_settings(self):
+    def update_duplicate_settings(self) -> None:
         self.ui.duplicates_dir_field.setText(self.config.duplicates_dir)
         self.ui.duplicates_lib_field.setCurrentText(self.config.duplicates_lib)
 
-    def save_duplicate_settings(self):
+    def save_duplicate_settings(self) -> None:
         self.config.duplicates_dir = self.ui.duplicates_dir_field.text()
         self.config.duplicates_lib = self.ui.duplicates_lib_field.currentText()
         self.config.update()
 
-    def reset_duplicate_settings(self):
+    def reset_duplicate_settings(self) -> None:
         self.config.duplicates_dir = ''
         self.config.duplicates_lib = ''
         self.config.update()
         self.update_duplicate_settings()
 
-    def update_sync_settings(self):
+    def update_sync_settings(self) -> None:
         self.ui.sync_dir_field_1.setText(self.config.sync_dir_1)
         self.ui.sync_dir_field_2.setText(self.config.sync_dir_2)
         self.ui.sync_lib_field_1.setCurrentText(self.config.sync_lib_1)
         self.ui.sync_lib_field_2.setCurrentText(self.config.sync_lib_2)
 
-    def save_sync_settings(self):
+    def save_sync_settings(self) -> None:
         self.config.sync_dir_1 = self.ui.sync_dir_field_1.text()
         self.config.sync_dir_2 = self.ui.sync_dir_field_2.text()
         self.config.sync_lib_1 = self.ui.sync_lib_field_1.currentText()
         self.config.sync_lib_2 = self.ui.sync_lib_field_2.currentText()
         self.config.update()
 
-    def reset_sync_settings(self):
+    def reset_sync_settings(self) -> None:
         self.config.sync_dir_1 = ''
         self.config.sync_dir_2 = ''
         self.config.sync_lib_1 = ''
@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
 
 
 class DuplicatesDlg(QDialog):
-    def __init__(self, duplicates: list, parent=None):
+    def __init__(self, duplicates: list, parent=None) -> None:
         super().__init__(parent)
         self.ui = Ui_DuplicatesDlg()
         self.ui.setupUi(self)
@@ -320,7 +320,7 @@ class DuplicatesDlg(QDialog):
         self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.ui.buttonBox.accepted)
         self.ui.buttonBox.accepted.connect(self.accept_changes)
 
-    def accept_changes(self):
+    def accept_changes(self) -> None:
         for i in range(self.ui.duplicates_dlg_tree.topLevelItemCount()):
             parent = self.ui.duplicates_dlg_tree.topLevelItem(i)
             for j in range(parent.childCount()):
@@ -332,7 +332,7 @@ class DuplicatesDlg(QDialog):
 
 
 class SyncDlg(QDialog):
-    def __init__(self, sync_elements_1: list, sync_elements_2: list, parent=None):
+    def __init__(self, sync_elements_1: list, sync_elements_2: list, parent=None) -> None:
         super().__init__(parent)
         self.ui = Ui_SyncDlg()
         self.ui.setupUi(self)
@@ -366,7 +366,7 @@ class SyncDlg(QDialog):
         self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.ui.buttonBox.accepted)
         self.ui.buttonBox.accepted.connect(self.accept_changes)
 
-    def accept_changes(self):
+    def accept_changes(self) -> None:
         for i in range(self.ui.sync_dlg_tree_1.topLevelItemCount()):
             item = self.ui.sync_dlg_tree_1.topLevelItem(i)
             if item.checkState(0) is Qt.CheckState.Checked:
@@ -380,10 +380,7 @@ class SyncDlg(QDialog):
                 print(artist, title, path)
 
 
-def main():
-    from logger import set_up_logger_config
-    set_up_logger_config()
-
+def main() -> None:
     app = QApplication(sys.argv)
     widget = MainWindow()
     widget.show()
@@ -391,5 +388,8 @@ def main():
 
 
 if __name__ == "__main__":
+    from logger import set_up_logger_config
+    set_up_logger_config()
+
     main()
 

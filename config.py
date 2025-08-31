@@ -30,7 +30,7 @@ class AppConfig:
         self.config['main']['target_dir'] = value
 
     @property
-    def artist_dir(self):
+    def artist_dir(self) -> list:
         return json.loads(self.config['main']['artist_dir'])
 
     @artist_dir.setter
@@ -125,7 +125,8 @@ class AppConfig:
     def sync_lib_2(self, value: str) -> None:
         self.config['sync']['sync_lib_2'] = value
 
-if __name__ == "__main__":
+
+def main():
     config = AppConfig()
     print(config.target_dir)
     config.target_dir = ''
@@ -136,4 +137,11 @@ if __name__ == "__main__":
     config.artist_dir = ['1', '2']
     config.artist_dir = ['Legend', 'Легенды']
     config.update()
+
+
+if __name__ == "__main__":
+    from logger import set_up_logger_config
+    set_up_logger_config()
+
+    main()
 

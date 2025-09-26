@@ -14,9 +14,6 @@ def make_filter():
     return filter
 
 
-# TODO:
-#   сделать, чтобы информация о строчках файла выводилась только при ошибках, либо немного разделить, потому что сейчас
-#   в INFO слишком много мусора
 LOGGING = {
     'version': 1,
     'filters': {
@@ -36,7 +33,7 @@ LOGGING = {
     'handlers': {
         'console_handler': {
             'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'default',
             'filters': ['filter']
         },
@@ -59,8 +56,8 @@ LOGGING = {
         }
     },
     'loggers': {
-        'TagChanger': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'INFO'},
-        'DBController': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'INFO'},
+        'TagChanger': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
+        'DBController': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
         'Config': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
         'UI': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
     }

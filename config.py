@@ -9,16 +9,16 @@ from pathlib import Path
 class AppConfig:
     def __init__(self) -> None:
         """Класс для работы с файлом настроек и конфигураций"""
-        self.logger = logging.getLogger('Settings')
+        self.logger = logging.getLogger('Config')
         self.config = configparser.ConfigParser()
         self.path = Path(Path(__file__).parent, 'settings.ini')
         self.default = Path(Path(__file__).parent, 'settings_example.ini')
         if not self.path.exists():
             shutil.copy(self.default, self.path)
-        self.config.read(self.path)
+        self.config.read(self.path, encoding='utf-8')
 
     def update(self) -> None:
-        with open(self.path, 'w') as f:
+        with open(self.path, 'w', encoding='utf-8') as f:
             self.config.write(f)
 
     @property

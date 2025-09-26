@@ -29,7 +29,6 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 #   подключить бд
 #   посмотреть, можно ли работу с кастомными функциями привязать в QtCreator, что бы тут не захламлять код
 #   перенести всё с old
-#   обновить logger
 #   ...
 
 dup = [

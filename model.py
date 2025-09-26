@@ -22,4 +22,4 @@ class TableModel:
     album: str = 'TEXT'
     feat: str = 'TEXT'
     special: str = 'TEXT'
-    image: str = 'TEXT'
+

@@ -114,7 +114,6 @@ class MainWindow(QMainWindow):
 
     def start_main(self) -> None:
         """Запуск скрипта"""
-
         self.ui.statusBar.showMessage('Скрипт начал работу')
 
         target_dir = Path(self.ui.target_dir_field.text())
@@ -127,20 +126,17 @@ class MainWindow(QMainWindow):
             self.logger.info('Не все данные были заполнены')
             return 1
 
-        self.tag_changer.set_up_target_dir(target_dir)
-        self.tag_changer.set_up_artist_dirs(artist_dirs)
+        self.tag_changer.target_dir = target_dir
+        self.tag_changer.artist_dirs = artist_dirs
 
-        # TODO: понять, что сделать с прогресс баром. зарание считать сколько песен обрабатывается достаточно сложно
+        # TODO: Понять, что сделать с прогресс баром.
+        #       Зарание считать сколько песен обрабатывается достаточно сложно
         # progress_bar = QProgressBar()
         # progress_bar.setRange(0, 100)
         # self.ui.statusBar.addPermanentWidget(progress_bar)
         # progress_bar.show()
         # progress_bar.setValue(i * 10 + 10)
         # self.ui.statusBar.removeWidget(progress_bar)
-
-        items = self.tag_changer.start(target_dir)
-        for i, song_data in enumerate(items):
-            self.logger.debug(f'{song_data.artist} - {song_data.title}')
 
         self.logger.info('Запуск скрипта')
         items = self.tag_changer.start(target_dir)
@@ -151,7 +147,7 @@ class MainWindow(QMainWindow):
                     self.db.insert(song_data, library)
         else:
             for song_data in items:
-                self.logger.debug(f'{song_data.artist} - {song_data.title}')
+                pass
 
         self.show_message('Скрипт завершил работу')
         self.logger.info('Скрипт завершил работу')

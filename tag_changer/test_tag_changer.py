@@ -6,7 +6,7 @@ from tag_changer import TagChanger
 from logger import set_up_logger_config
 
 
-# TODO добавить откат после тестов изменяющих данные файлов
+# TODO: добавить откат после тестов изменяющих данные файлов
 class TestTagChanger:
     @pytest.fixture(scope="class")
     def tag_changer(self):
@@ -53,7 +53,7 @@ class TestTagChanger:
         assert tag_changer.delete_numbers('name w - o number') == 'name w - o number'
 
     def test_delete_numbers_special(self, tag_changer):
-        # TODO не уверен правильно ли это
+        # TODO: не уверен правильно ли это
         assert tag_changer.delete_numbers('41 Sum') == 'Sum'
         assert tag_changer.delete_numbers('12.Artist - Title') == '12.Artist - Title'
         assert tag_changer.delete_numbers('12 Artist - Title') == 'Artist - Title'
@@ -302,7 +302,7 @@ class TestTagChanger:
         ]
         for i, (file_path, album) in enumerate(input_data):
             assert tag_changer.get_image(file_path, album) == output_results[i]
-        tag_changer.delete_images(tag_changer.target_dir)  # TODO дописать тесты через вывод логов
+        tag_changer.delete_images(tag_changer.target_dir)  # TODO: дописать тесты через вывод логов
 
     def test_some(self):
         s1 = ''

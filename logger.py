@@ -22,18 +22,18 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'default': {
-            'format': '[%(asctime)s] %(levelname)-10s | %(message)s',
+            'format': '[%(asctime)s] %(levelname)-9s: %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
         'extended': {
-            'format': '[%(asctime)s] %(levelname)-10s | %(message)s [%(filename)s::%(name)s::%(funcName)s::%(lineno)d]',
+            'format': '[%(asctime)s] %(levelname)-9s: %(message)s\n[%(filename)s:%(lineno)d %(name)s.%(funcName)s]',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         }
     },
     'handlers': {
         'console_handler': {
             'class': 'logging.StreamHandler',
-            'level': 'INFO',
+            'level': 'DEBUG',
             'formatter': 'default',
             'filters': ['filter']
         },

@@ -6,7 +6,7 @@ from model import SongData
 from logger import set_up_logger_config
 
 
-# TODO костыли на костылях, надо поправить
+# TODO: костыли на костылях, надо поправить
 class TestDB:
     @pytest.fixture
     def db_name(self):
@@ -126,3 +126,4 @@ class TestDB:
             db.clear_table()
             results = db.find()
             assert len(results) == 0
+

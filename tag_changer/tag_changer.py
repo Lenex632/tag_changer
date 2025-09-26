@@ -215,15 +215,7 @@ class TagChanger:
                 #   где картинки шакалятся и как они вообще храняться?
                 song.tag.images.set(3, image.read(), "image/jpeg")
         song.tag.save()
-        # PERF: а это зачем? может всё же не надо в бд картинки хранить?
-        #   Оно как бы понятно, что вот у тебя был полный путь до обложки,
-        #   а теперь обрезанный, что бы в бд запхать, но мы их всё равно удаляем.
-        #   Если не хранить картинку в бинарной форме или где-то на
-        #   удалённом сервере, и уже там путь указывать, то
-        #   сохранять обложки в бд - смысла нет.
-        if song_data.image is not None:
-            song_data.image = song_data.image.relative_to(self.target_dir)
-        self.logger.info(f'[{song_data.album:^20}] [{song_data.artist:^20}] [{song_data.title:^20}]')
+        self.logger.info(f'{song_data.album:^20} | {song_data.artist:^20} | {song_data.title:^20}')
 
     def start(self, directory: Path):
         """
@@ -243,58 +235,54 @@ class TagChanger:
                 yield song_data
 
 
-def main_linux() -> None:
+def main(linux: bool = True) -> None:
+    file_path = '/home/lenex/code/tag_changer/test_target_dir/' \
+        if linux else 'C:\\code\\tag_changer\\test_target_dir'
     tc = TagChanger()
-    tc.target_dir = Path('/home/lenex/code/tag_changer/test_target_dir/')
+    tc.target_dir = Path(file_path)
     tc.artist_dirs = ['Legend', 'Легенды']
     items = tc.start(tc.target_dir)
-    for song_data in items:
-        pass
+    with DBController('test') as db:
+        db.create_table_if_not_exist('main')
+        for song_data in items:
+            db.insert('main', song_data)
     tc.delete_images(tc.target_dir)
-
-
-def main_wind() -> None:
-    a = TagChanger()
-    a.target_dir = 'C:\\code\\tag_changer\\test_target_dir'
-    a.artist_dirs = ['Legend', 'Легенды']
-    items = a.start(a.target_dir)
-
-    with DBController() as db:
-        db.create_table_if_not_exist('test_main')
-        for item in items:
-            db.insert(item, 'test_main')
 
 
 def test_linux() -> None:
     # проверки и возможные функции для вычисления или извлечения данных
     file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
     song = eyed3.load(file_path)
+    song.initTag()
     song.tag.remove(file_path)
 
 
 def test_wind() -> None:
-    # file_path = 'C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\Flawed Design\\Saint Asonia,Sharon den Adel - Sirens.mp3'
-    pass
+    file_path = 'C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\Flawed Design\\Saint Asonia,Sharon den Adel - Sirens.mp3'
+    song = eyed3.load(file_path)
+    song.initTag()
+    song.tag.remove(file_path)
 
 
 def test_img() -> None:
-    file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
+    # file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
+    file_path = '/home/lenex/Music/abc-cba.mp3'
     song = eyed3.load(file_path)
-    song.initTag()
-    print(song.tag.images._fs[b'APIC'][0].picture_type)
+    print(song.tag.images)
+    print(song.tag.images._fs)
+    # print(song.tag.images._fs[b'APIC'][0].picture_type)
 
-    image = song.tag.images[0].image_data
-    image_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/cover2.jpg'
-    with open(image_path, 'wb+') as album_cover:
-        album_cover.write(image)
+    # image = song.tag.images[0].image_data
+    # image_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/cover.jpg'
+    # with open(image_path, 'wb+') as album_cover:
+    #     album_cover.write(image)
 
 
 if __name__ == '__main__':
     from logger import set_up_logger_config
     set_up_logger_config()
 
-    main_linux()
-    # main_wind()
+    main()
     # test_wind()
     # test_linux()
     # test_img()

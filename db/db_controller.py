@@ -1,20 +1,22 @@
 import logging
-from pathlib import Path
 import sqlite3
+
+from dataclasses import asdict
+from pathlib import Path
 
 from model import SongData, TableModel
 
 
 class DBController:
-    def __init__(self, db_name: str = 'music.db') -> None:
+    def __init__(self, db_name: str = 'music') -> None:
         """
         Класс управления базой данных.
         Операции будут проводиться с помощью контекстного менеджера.
         """
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.db_name = db_name
+        self.db_name = db_name + '.db'
         self.db_path = Path(Path(__file__).parent, self.db_name)
-        self.table_model = TableModel().__dict__
+        self.table_model = TableModel()
 
     def __enter__(self) -> "DBController":
         self.connection = sqlite3.connect(self.db_path)
@@ -25,7 +27,8 @@ class DBController:
             if exc_type is None:
                 self.connection.commit()
             else:
-                self.logger.error(f'Cant commit changes to db "{self.db_name}"')
+                self.logger.error(f'Не удалось зафиксировать изменения в базе данных: "{self.db_name}"')
+                self.logger.critical(exc_type, exc_info=True)
                 self.connection.rollback()
             self.connection.close()
 
@@ -48,7 +51,7 @@ class DBController:
 
     def create_table_if_not_exist(self, table: str) -> None:
         """Создаёт базу данных и таблицу table, если такие не существуют"""
-        table_columns = f'{", ".join(f"{key} {value}" for key, value in self.table_model.items())}'
+        table_columns = f'{", ".join(f"{key} {value}" for key, value in asdict(self.table_model).items())}'
         # TODO: мб подправить хардкод с file_path
         query = (f'CREATE TABLE IF NOT EXISTS {table} ({table_columns}, '
                  f'CONSTRAINT unique_file_path UNIQUE (file_path))')
@@ -56,62 +59,66 @@ class DBController:
 
     def get_tables_list(self) -> list | tuple:
         """Возвращает имена всех несистемных таблиц из базы данных"""
+        # PERF: хз где используется, пока что только в старой версии
         query = 'SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"'
-        result = self.execute_and_fetch(query)
-        result = list(map(lambda x: x[0], result))
-        return result
+        results = self.execute_and_fetch(query)
+        results = [res[0] for res in results]
+        self.logger.debug(f'Список таблиц в базе: {results}')
+        return results
 
     def clear_table(self, table: str) -> None:
         """Очищение таблицы от всех данных"""
         query = f'DELETE FROM {table}'
         self.execute(query)
-        self.logger.info(f'"{table}" has been cleared')
+        self.logger.debug(f'Таблица была очищена: "{table}"')
 
     def drop_table(self, table: str) -> None:
         """Удаляет выбранную таблицу"""
-        query = f'DROP TABLE {table}'
+        query = f'DROP TABLE IF EXISTS {table}'
         self.execute(query)
-        self.logger.info(f'"{table}" has been deleted')
+        self.logger.debug(f'Таблица была удалена: "{table}"')
 
-    def insert(self, song_data: SongData, table: str) -> None:
+    def insert(self, table: str, song_data: SongData) -> None:
         """Вставка значений song_data в таблицу"""
         # Подготовка значений, а то sqlite3 будет ругаться
         song_data.file_path = str(song_data.file_path)
-        song_data.image = str(song_data.image) if song_data.image else None
-        song_data.feat = song_data.feat if song_data.feat else None
-        song_data.special = song_data.special if song_data.special else None
 
-        keys = f'{", ".join(f"{key}" for key in song_data.__dict__.keys())}'
-        values = list(song_data.__dict__.values())
+        data_dict = asdict(song_data)
+        # PERF: хардкод с image
+        data_dict.pop('image')
+        keys = ', '.join(data_dict.keys())
+        values = tuple(data_dict.values())
         query = f'INSERT INTO {table} ({keys}) VALUES ({", ".join("?" for _ in values)})'
         self.execute(query, params=values)
-        self.logger.debug(f'"{song_data.artist} - {song_data.title}" has been added to table "{table}"')
+        self.logger.debug(f'"{song_data.artist} - {song_data.title}" была добавлена в таблицу "{table}"')
 
-    def delete(self, song_id: int, table: str) -> None:
+    def delete(self, table: str, song_id: int) -> None:
         """Удаление элемента по id"""
         query = f'DELETE FROM {table} WHERE song_id={song_id}'
         self.execute(query)
-        self.logger.debug(f'Song with id={song_id} has been deleted from table "{table}"')
+        self.logger.debug(f'Данные были удалены {song_id=} из таблицы "{table}"')
 
     def find(self, table: str, condition: str = None) -> list:
         """
-        Нахождение элементов по condition (в формате 'song_id = 1'), либо вообще всей таблички, если condition=None
+        Нахождение элементов по condition (в формате 'song_id = 1'),
+        либо вообще всей таблички, если condition=None
         """
         if condition:
             query = f'SELECT * FROM {table} WHERE {condition}'
         else:
             query = f'SELECT * FROM {table}'
         results = self.execute_and_fetch(query)
-        self.logger.info(f'{len(results)} rows was found in table "{table}" for {condition=}')
+        self.logger.debug(f'Было найдено {len(results)} совпадений в "{table}" для условия {condition or "ALL"}')
+        self.logger.debug(results)
         return results
 
-    def update(self, condition: str, new: str, table: str) -> None:
+    def update(self, table: str, condition: str, new: str) -> None:
         """
         Нахождение элемента с condition (в формате 'song_id = 1') и обновление его
         параметров new (в формате 'title = "New Title"')
         """
         query = f'UPDATE {table} SET {new} WHERE {condition}'
-        self.logger.debug(f'Update table "{table}" where {condition} with new parameters {new}')
+        self.logger.debug(f'В элементах с условием {condition} в таблице {table} были обновлены параметры: {new}')
         self.execute(query)
 
     def find_duplicates(self, table: str) -> list[tuple]:
@@ -122,7 +129,7 @@ class DBController:
             HAVING COUNT(*) > 1;
         '''
         results = self.execute_and_fetch(query)
-        self.logger.info(f'{len(results)} groups of duplicates was found in table "{table}"')
+        self.logger.debug(f'{len(results)} групп дубликатов было найдено в таблице "{table}"')
 
         duplicates = []
         for res in results:
@@ -132,9 +139,11 @@ class DBController:
             duplicate = self.find(table, condition)
             duplicates.append((title, artist, duplicate))
 
+        self.logger.debug(f'Дубликаты: {duplicate}')
+
         return duplicates
 
-    def find_differences(self, library1, library2) -> [list, list]:
+    def find_differences(self, library1: str, library2: str) -> [list, list]:
         query = f'''SELECT file_path from {library1};'''
         dif1 = self.execute_and_fetch(query)
         query = f'''SELECT file_path from {library2};'''
@@ -177,10 +186,44 @@ class DBController:
         return dif1, dif2
 
 
+def test_create() -> None:
+    with DBController(db_name='test') as db:
+        db.create_table_if_not_exist('test')
+        db.get_tables_list()
+        db.drop_table('test')
+
+
+def test_insert() -> None:
+    song_data = SongData(
+        file_path=Path('The Best\\test album\\EMPiRE - RiGHT NOW (EN9).mp3'),
+        title='RiGHT NOW',
+        artist='EMPiRE',
+        album='test album',
+        feat='',
+        image=Path('The Best\\test album\\test album.jpg')
+    )
+    with DBController(db_name='test') as db:
+        db.create_table_if_not_exist('main')
+        db.insert('main', song_data)
+        db.find('main', 'album = "test album"')
+        db.update('main', 'album = "test album"', 'album = "test album 2"')
+        db.find('main', 'album = "test album"')
+        db.find('main', 'album = "test album 2"')
+        db.delete('main', 1)
+        db.find('main')
+        db.drop_table('main')
+
+
+def test_duplicates() -> None:
+    with DBController(db_name='test') as db:
+        db.find_duplicates('main')
+
+
 if __name__ == '__main__':
     from logger import set_up_logger_config
     set_up_logger_config()
 
-    with DBController() as db:
-        db.find_differences('main', 'sync')
+    # test_create()
+    # test_insert()
+    test_duplicates()
 

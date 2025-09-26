@@ -351,3 +351,4 @@ class DialogButtons(QWidget):
         layout.addWidget(self.cansel_button)
 
         self.setLayout(layout)
+

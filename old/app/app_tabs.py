@@ -373,3 +373,4 @@ class SyncDialog(QDialog):
         layout.addWidget(self.buttons_widget)
 
         self.setLayout(layout)
+

@@ -1,59 +1,84 @@
-import os
 import logging
 import logging.config
 from pathlib import Path
-import sys
 
 
 file = Path(Path(__file__).parent, 'logs/tag_changer.log')
-error = os.path.join(os.path.dirname(__file__), "logs/error.log")
+error = Path(Path(__file__).parent, 'logs/error.log')
 
 
-def filter(record):
-    return record.levelno < logging.CRITICAL
+# INFO: дополнительная обёртка нужна как костыль для Python < 3.11
+def make_filter():
+    def filter(record):
+        return record.levelno < logging.CRITICAL
+    return filter
 
 
 # TODO:
-#   сделать, чтобы информация о строчках файла выводилась только при ошибках, либо немного разделить, потому что сейчас в INFO слишком много мусора
-#   почему-то логирование в файл не работает, надо понять почему
+#   сделать, чтобы информация о строчках файла выводилась только при ошибках, либо немного разделить, потому что сейчас
+#   в INFO слишком много мусора
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": True,
-    "formatters": {
-        "default": {
-            "format": "[%(asctime)s] [%(levelname)s]:  %(message)s",
-            "datefmt": "%Y-%m-%d %H:%M:%S"
+    'version': 1,
+    'filters': {
+        'filter': {'()': make_filter}
+    },
+    'disable_existing_loggers': True,
+    'formatters': {
+        'default': {
+            'format': '[%(asctime)s] %(levelname)-10s | %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         },
-        "extended": {
-            "format": "[%(asctime)s] [%(levelname)s]:  %(message)s [%(filename)s::%(name)s::%(funcName)s::%(lineno)d]",
-            "datefmt": "%Y-%m-%d %H:%M:%S"
+        'extended': {
+            'format': '[%(asctime)s] %(levelname)-10s | %(message)s [%(filename)s::%(name)s::%(funcName)s::%(lineno)d]',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
         }
     },
-    "handlers": {
-        "console_handler": {
-            "class": "logging.StreamHandler",
-            "formatter": "default",
-            # "stream": sys.stdout,
-            "filters": [filter]
+    'handlers': {
+        'console_handler': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'formatter': 'default',
+            'filters': ['filter']
         },
-        "file_handler": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "default",
-            "filename": file,
-            "maxBytes": 1024 * 1024,
-            "backupCount": 5,
-            "filters": [filter]
+        'file_handler': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'formatter': 'default',
+            'filename': file,
+            'maxBytes': 1024 * 1024,
+            'backupCount': 5,
+            'filters': ['filter']
+        },
+        'error_handler': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'CRITICAL',
+            'formatter': 'extended',
+            'filename': error,
+            'maxBytes': 1024 * 1024,
+            'backupCount': 5
         }
     },
-    "loggers": {
-        "TagChanger": {"handlers": ["console_handler", "file_handler"], "level": "INFO"},
-        "DBController": {"handlers": ["console_handler", "file_handler"], "level": "INFO"},
-        "Config": {"handlers": ["console_handler", "file_handler"], "level": "DEBUG"},
-        "UI": {"handlers": ["console_handler", "file_handler"], "level": "DEBUG"},
+    'loggers': {
+        'TagChanger': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'INFO'},
+        'DBController': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'INFO'},
+        'Config': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
+        'UI': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
     }
 }
 
 
 def set_up_logger_config():
     logging.config.dictConfig(LOGGING)
+
+
+if __name__ == "__main__":
+    set_up_logger_config()
+    from logging import getLogger
+
+    logger = getLogger('TagChanger')
+    logger.info(file)
+    logger.info(error)
+    logger.info('test_log')
+    logger.error('test_error')
+    logger.critical('test_critical')
 

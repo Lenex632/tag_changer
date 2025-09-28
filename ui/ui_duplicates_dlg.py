@@ -73,6 +73,6 @@ class Ui_DuplicatesDlg(object):
         self.label.setText(QCoreApplication.translate("DuplicatesDlg", u"\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442\u044b \u043f\u043e\u0438\u0441\u043a\u0430 \u0434\u0443\u0431\u043b\u0438\u043a\u0430\u0442\u043e\u0432. \u041e\u0442\u043c\u0435\u0442\u044c\u0435 \u0442\u0435, \u0447\u0442\u043e \u0445\u043e\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043b\u0438\u0442\u044c.", None))
         ___qtreewidgetitem = self.duplicates_dlg_tree.headerItem()
         ___qtreewidgetitem.setText(1, QCoreApplication.translate("DuplicatesDlg", u"\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", None));
-        ___qtreewidgetitem.setText(0, QCoreApplication.translate("DuplicatesDlg", u"\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c", None));
+        ___qtreewidgetitem.setText(0, QCoreApplication.translate("DuplicatesDlg", u"\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c/#", None));
     # retranslateUi
 

@@ -72,7 +72,7 @@
      </attribute>
      <column>
       <property name="text">
-       <string>Исполнитель</string>
+       <string>Исполнитель/#</string>
       </property>
      </column>
      <column>

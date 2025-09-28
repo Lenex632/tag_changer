@@ -38,7 +38,7 @@ class Ui_SyncDlg(object):
         self.sync_dlg_tree_1.setSortingEnabled(True)
         self.sync_dlg_tree_1.setWordWrap(True)
         self.sync_dlg_tree_1.setExpandsOnDoubleClick(False)
-        self.sync_dlg_tree_1.setColumnCount(3)
+        self.sync_dlg_tree_1.setColumnCount(4)
         self.sync_dlg_tree_1.header().setProperty(u"showSortIndicator", True)
 
         self.gridLayout.addWidget(self.sync_dlg_tree_1, 1, 0, 1, 1)
@@ -50,7 +50,7 @@ class Ui_SyncDlg(object):
         self.sync_dlg_tree_2.setSortingEnabled(True)
         self.sync_dlg_tree_2.setWordWrap(True)
         self.sync_dlg_tree_2.setExpandsOnDoubleClick(False)
-        self.sync_dlg_tree_2.setColumnCount(3)
+        self.sync_dlg_tree_2.setColumnCount(4)
         self.sync_dlg_tree_2.header().setProperty(u"showSortIndicator", True)
 
         self.gridLayout.addWidget(self.sync_dlg_tree_2, 1, 1, 1, 1)
@@ -73,12 +73,14 @@ class Ui_SyncDlg(object):
         SyncDlg.setWindowTitle(QCoreApplication.translate("SyncDlg", u"\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442 \u043f\u043e\u0438\u0441\u043a\u0430 \u0434\u043b\u044f \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0430\u0446\u0438\u0438", None))
         self.label.setText(QCoreApplication.translate("SyncDlg", u"\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u0430\u043a\u0438\u0435 \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u044b \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u0438\u0437\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0434\u043b\u044f \u043e\u0431\u0435\u0438\u0445 \u043f\u0430\u043f\u043a\u0430\u0445. \u041d\u0435\u043e\u0442\u043c\u0435\u0447\u0435\u043d\u043d\u044b\u0435 \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u044b \u0431\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043b\u0435\u043d\u044b.", None))
         ___qtreewidgetitem = self.sync_dlg_tree_1.headerItem()
-        ___qtreewidgetitem.setText(2, QCoreApplication.translate("SyncDlg", u"\u041f\u0443\u0442\u044c", None));
-        ___qtreewidgetitem.setText(1, QCoreApplication.translate("SyncDlg", u"\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", None));
-        ___qtreewidgetitem.setText(0, QCoreApplication.translate("SyncDlg", u"\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c", None));
+        ___qtreewidgetitem.setText(3, QCoreApplication.translate("SyncDlg", u"\u041f\u0443\u0442\u044c", None));
+        ___qtreewidgetitem.setText(2, QCoreApplication.translate("SyncDlg", u"\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", None));
+        ___qtreewidgetitem.setText(1, QCoreApplication.translate("SyncDlg", u"\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c", None));
+        ___qtreewidgetitem.setText(0, QCoreApplication.translate("SyncDlg", u"#", None));
         ___qtreewidgetitem1 = self.sync_dlg_tree_2.headerItem()
-        ___qtreewidgetitem1.setText(2, QCoreApplication.translate("SyncDlg", u"\u041f\u0443\u0442\u044c", None));
-        ___qtreewidgetitem1.setText(1, QCoreApplication.translate("SyncDlg", u"\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", None));
-        ___qtreewidgetitem1.setText(0, QCoreApplication.translate("SyncDlg", u"\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c", None));
+        ___qtreewidgetitem1.setText(3, QCoreApplication.translate("SyncDlg", u"\u041f\u0443\u0442\u044c", None));
+        ___qtreewidgetitem1.setText(2, QCoreApplication.translate("SyncDlg", u"\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", None));
+        ___qtreewidgetitem1.setText(1, QCoreApplication.translate("SyncDlg", u"\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c", None));
+        ___qtreewidgetitem1.setText(0, QCoreApplication.translate("SyncDlg", u"#", None));
     # retranslateUi
 

@@ -98,7 +98,7 @@ class DBController:
         self.execute(query)
         self.logger.debug(f'Данные были удалены {song_id=} из таблицы "{table}"')
 
-    def find(self, table: str, condition: str = None) -> list:
+    def find(self, table: str, condition: str = None) -> list[tuple] | tuple:
         """
         Нахождение элементов по condition (в формате 'song_id = 1'),
         либо вообще всей таблички, если condition=None
@@ -112,6 +112,8 @@ class DBController:
         results = self.execute_and_fetch(query)
         self.logger.debug(f'Было найдено {len(results)} совпадений в "{table}" для условия {condition or "ALL"}')
         self.logger.debug(results)
+        if len(results) == 1:
+            return results[0]
         return results
 
     def update(self, table: str, condition: str, new: str) -> None:
@@ -144,48 +146,38 @@ class DBController:
         self.logger.debug(f'Дубликаты:\n{duplicates}')
         return duplicates
 
-    def find_differences(self, library1: str, library2: str) -> [list, list]:
+    def find_differences(self, lib_1: str, lib_2: str) -> [tuple, tuple]:
         # TODO: всё ещё надо адаптировать
-        query = f'''SELECT file_path from {library1};'''
-        dif1 = self.execute_and_fetch(query)
-        query = f'''SELECT file_path from {library2};'''
-        dif2 = self.execute_and_fetch(query)
-
-        print(len(dif1), '---------------------')
-        for d in dif1:
-            print(d)
-        print(len(dif2), '---------------------')
-        for d in dif2:
-            print(d)
-
         query = f'''
-            SELECT {library1}.file_path, {library2}.file_path
-            FROM {library1} LEFT JOIN {library2}
-            ON {library1}.file_path = {library2}.file_path
+            SELECT {lib_1}.song_id, {lib_2}.song_id
+            FROM {lib_1} LEFT JOIN {lib_2}
+            ON {lib_1}.file_path = {lib_2}.file_path
             UNION
-            SELECT {library1}.file_path, {library2}.file_path
-            FROM {library2} LEFT JOIN {library1}
-            ON {library1}.file_path = {library2}.file_path;
+            SELECT {lib_1}.song_id, {lib_2}.song_id
+            FROM {lib_2} LEFT JOIN {lib_1}
+            ON {lib_1}.file_path = {lib_2}.file_path;
         '''
         result = self.execute_and_fetch(query)
-        print('------------------------------------')
+
         for res in result:
-            print(res)
+            self.logger.debug(res)
 
-        dif1, dif2 = [], []
-        for dir1, dir2 in result:
-            if dir1 is None:
-                dif1.append(dir2)
-            if dir2 is None:
-                dif2.append(dir1)
-        print('------------------------------------')
-        for d in dif1:
-            print(d)
-        print('------------------------------------')
-        for d in dif2:
-            print(d)
+        to_sync_1, to_sync_2 = [], []
+        for song_id_1, song_id_2 in result:
+            if song_id_1 is None:
+                condition = f"song_id = '{song_id_2}'"
+                to_sync_2.append(self.find(lib_2, condition))
+            if song_id_2 is None:
+                condition = f"song_id = '{song_id_1}'"
+                to_sync_1.append(self.find(lib_1, condition))
 
-        return dif1, dif2
+        for x in to_sync_1:
+            print(x)
+        print('------------------------------------')
+        for x in to_sync_2:
+            print(x)
+
+        return to_sync_1, to_sync_2
 
 
 def test_create() -> None:
@@ -221,6 +213,11 @@ def test_duplicates() -> None:
         db.find_duplicates('target_dir')
 
 
+def test_find_diff() -> None:
+    with DBController(db_name='music') as db:
+        db.find_differences('sync_dir_1', 'sync_dir_2')
+
+
 def test_some() -> None:
     with DBController(db_name='music') as db:
         db.find('target_dir', "artist = 'artist'")
@@ -232,6 +229,7 @@ if __name__ == '__main__':
 
     # test_create()
     # test_insert()
-    test_duplicates()
+    # test_duplicates()
+    test_find_diff()
     # test_some()
 

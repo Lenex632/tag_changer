@@ -26,32 +26,9 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 # TODO:
 #   перенести все todo, настройки и прочее с прошлого файла
 #   пререписать README, тестики, скриншоты и тд.
-#   подключить бд
 #   посмотреть, можно ли работу с кастомными функциями привязать в QtCreator, что бы тут не захламлять код
 #   перенести всё с old
 #   ...
-
-# dup = [
-#     ("name 1", "artist", [
-#         (1, "path 1"),
-#         (2, "path 2")
-#     ]),
-#     ("name 2", "artist", [
-#         (3, "path 1"),
-#         (4, "path 2"),
-#         (5, "path 3"),
-#         (6, "path 4")
-#     ]),
-#     ("name 3", "artist", [
-#         (7, "path 1"),
-#         (8, "path 2"),
-#         (9, "path 3")
-#     ]),
-#     ("name 4", "artist", [
-#         (10, "path 1"),
-#         (11, "path 2")
-#     ])
-# ]
 
 sync_1 = [
     ["artist1", "name1", "path1"],
@@ -164,19 +141,35 @@ class MainWindow(QMainWindow):
         else:
             for song_data in items:
                 pass
+        self.tag_changer.delete_images(target_dir)
 
         self.show_message('Скрипт завершил работу')
         self.logger.info('Скрипт завершил работу')
 
     def start_duplicates(self) -> None:
-        # TODO: тут заводим функцию поиска дубликатов по бд, потом пхаем результат в класс.
-
-        # target_dir = self.ui.duplicates_dir_field.text()
+        # TODO: выводить какие-то сообщения с результатом работы
+        target_dir = self.ui.duplicates_dir_field.text()
         target_lib = self.ui.duplicates_lib_field.currentText()
         with self.db:
             duplicates = self.db.find_duplicates(table=target_lib)
         dlg = DuplicatesDlg(duplicates=duplicates, parent=self)
         dlg.exec()
+
+        results = dlg.results
+        if results:
+            with self.db:
+                for song_id, file_path in results:
+                    full_path = Path(target_dir, file_path)
+                    self.db.delete(table=target_lib, song_id=song_id)
+                    try:
+                        full_path.unlink()
+                    except FileNotFoundError:
+                        # TODO: добавить какой-нибудь диалог,
+                        #   что вот это вот не получилось, поэтому и в бд не получилось
+                        #   НО при этом надо что-то делать с уже удалёнными файлами
+                        #   либо просить заново отсканировать... либо ещё чего...
+                        self.logger.error('Не удалось удалить файл. Изменения в бд отмененны')
+                        raise
 
     def start_sync(self) -> None:
         dlg = SyncDlg(sync_elements_1=sync_1, sync_elements_2=sync_2, parent=self)
@@ -318,6 +311,7 @@ class DuplicatesDlg(QDialog):
         self.ui = Ui_DuplicatesDlg()
         self.ui.setupUi(self)
         self.duplicates = duplicates
+        self.results = []
 
         for title, artist, group in self.duplicates:
             parent = QTreeWidgetItem(self.ui.duplicates_dlg_tree)
@@ -348,9 +342,10 @@ class DuplicatesDlg(QDialog):
             for j in range(parent.childCount()):
                 child = parent.child(j)
                 if child.checkState(0) is Qt.CheckState.Checked:
-                    artist, title = parent.text(0), parent.text(1)
-                    idx, path = child.text(0), child.text(1)
-                    print(artist + title + idx + path)
+                    song_id, file_path = child.text(0), child.text(1)
+                    # artist, title = parent.text(0), parent.text(1)
+                    # print(f'{artist} + {title} + {song_id} + {file_path}')
+                    self.results.append((song_id, file_path))
 
 
 class SyncDlg(QDialog):

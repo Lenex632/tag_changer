@@ -102,6 +102,8 @@ class DBController:
         """
         Нахождение элементов по condition (в формате 'song_id = 1'),
         либо вообще всей таблички, если condition=None
+        ВНИМАНИИЕ! строковые представления в condition
+                   должны заключаться в одинарные кавычки
         """
         if condition:
             query = f'SELECT * FROM {table} WHERE {condition}'
@@ -116,6 +118,8 @@ class DBController:
         """
         Нахождение элемента с condition (в формате 'song_id = 1') и обновление его
         параметров new (в формате 'title = "New Title"')
+        ВНИМАНИИЕ! строковые представления в condition
+                   должны заключаться в одинарные кавычки
         """
         query = f'UPDATE {table} SET {new} WHERE {condition}'
         self.logger.debug(f'В элементах с условием {condition} в таблице {table} были обновлены параметры: {new}')
@@ -134,11 +138,10 @@ class DBController:
         for res in results:
             title = res[0]
             artist = res[1]
-            condition = f'title = "{title}" AND artist = "{artist}"'
+            condition = f"title = '{title}' AND artist = '{artist}'"
             duplicate = self.find(table, condition)
             duplicates.append((title, artist, duplicate))
-
-        self.logger.debug(f'Дубликаты: {duplicates}')
+        self.logger.debug(f'Дубликаты:\n{duplicates}')
         return duplicates
 
     def find_differences(self, library1: str, library2: str) -> [list, list]:
@@ -205,17 +208,22 @@ def test_insert() -> None:
         db.create_table_if_not_exist('main')
         db.insert('main', song_data)
         db.find('main', 'album = "test album"')
-        db.update('main', 'album = "test album"', 'album = "test album 2"')
-        db.find('main', 'album = "test album"')
-        db.find('main', 'album = "test album 2"')
+        db.update('main', "album = 'test album'", "album = 'test album 2'")
+        db.find('main', "album = 'test album'")
+        db.find('main', "album = 'test album 2'")
         db.delete('main', 1)
         db.find('main')
         db.drop_table('main')
 
 
 def test_duplicates() -> None:
-    with DBController(db_name='test') as db:
-        db.find_duplicates('main')
+    with DBController(db_name='music') as db:
+        db.find_duplicates('target_dir')
+
+
+def test_some() -> None:
+    with DBController(db_name='music') as db:
+        db.find('target_dir', "artist = 'artist'")
 
 
 if __name__ == '__main__':
@@ -225,4 +233,5 @@ if __name__ == '__main__':
     # test_create()
     # test_insert()
     test_duplicates()
+    # test_some()
 

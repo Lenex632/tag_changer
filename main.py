@@ -31,12 +31,28 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 #   перенести всё с old
 #   ...
 
-dup = [
-    ["name 1", "artist", ["path 1", "path 2"]],
-    ["name 2", "artist", ["path 1", "path 2", "path 3", "path 4"]],
-    ["name 3", "artist", ["path 1", "path 2", "path 3"]],
-    ["name 4", "artist", ["path 1", "path 2"]]
-]
+# dup = [
+#     ("name 1", "artist", [
+#         (1, "path 1"),
+#         (2, "path 2")
+#     ]),
+#     ("name 2", "artist", [
+#         (3, "path 1"),
+#         (4, "path 2"),
+#         (5, "path 3"),
+#         (6, "path 4")
+#     ]),
+#     ("name 3", "artist", [
+#         (7, "path 1"),
+#         (8, "path 2"),
+#         (9, "path 3")
+#     ]),
+#     ("name 4", "artist", [
+#         (10, "path 1"),
+#         (11, "path 2")
+#     ])
+# ]
+
 sync_1 = [
     ["artist1", "name1", "path1"],
     ["artist2", "name2", "path2"],
@@ -53,7 +69,6 @@ sync_2 = [
         "path/so/far/away/that/even/you/mam/cant/find/your/large/soda/"
     ]
 ]
-libs = ['main', 'duplicates', 'sync1', 'sync2']
 
 
 def toggle_check_state(tree_item: QTreeWidgetItem):
@@ -71,6 +86,8 @@ class MainWindow(QMainWindow):
         self.config = AppConfig()
         self.db = DBController()
         self.tag_changer = TagChanger()
+        with self.db as db:
+            self.libs = db.get_tables_list()
 
         self.ui.setupUi(self)
         self.ui.statusBar.setContentsMargins(10, 2, 10, 5)
@@ -120,12 +137,10 @@ class MainWindow(QMainWindow):
         artist_dirs = self.ui.artist_dir_field.toPlainText().split('\n')
         library = self.ui.library_field.currentText()
         db_update = True if self.ui.update_lib_checkbox.checkState() is Qt.CheckState.Checked else False
-
         if not target_dir or (not library and db_update):
             self.show_message('Не все данные были заполнены')
             self.logger.info('Не все данные были заполнены')
             return 1
-
         self.tag_changer.target_dir = target_dir
         self.tag_changer.artist_dirs = artist_dirs
 
@@ -142,9 +157,10 @@ class MainWindow(QMainWindow):
         items = self.tag_changer.start(target_dir)
         if db_update:
             with self.db:
-                self.db.clear_table(library)
+                self.db.drop_table(library)
+                self.db.create_table_if_not_exist(library)
                 for song_data in items:
-                    self.db.insert(song_data, library)
+                    self.db.insert(library, song_data)
         else:
             for song_data in items:
                 pass
@@ -154,7 +170,12 @@ class MainWindow(QMainWindow):
 
     def start_duplicates(self) -> None:
         # TODO: тут заводим функцию поиска дубликатов по бд, потом пхаем результат в класс.
-        dlg = DuplicatesDlg(duplicates=dup, parent=self)
+
+        # target_dir = self.ui.duplicates_dir_field.text()
+        target_lib = self.ui.duplicates_lib_field.currentText()
+        with self.db:
+            duplicates = self.db.find_duplicates(table=target_lib)
+        dlg = DuplicatesDlg(duplicates=duplicates, parent=self)
         dlg.exec()
 
     def start_sync(self) -> None:
@@ -176,11 +197,11 @@ class MainWindow(QMainWindow):
         self.ui.sync_lib_field_1.clear()
         self.ui.sync_lib_field_2.clear()
 
-        self.ui.library_field.addItems(libs)
-        self.ui.add_lib_field.addItems(libs)
-        self.ui.duplicates_lib_field.addItems(libs)
-        self.ui.sync_lib_field_1.addItems(libs)
-        self.ui.sync_lib_field_2.addItems(libs)
+        self.ui.library_field.addItems(self.libs)
+        self.ui.add_lib_field.addItems(self.libs)
+        self.ui.duplicates_lib_field.addItems(self.libs)
+        self.ui.sync_lib_field_1.addItems(self.libs)
+        self.ui.sync_lib_field_2.addItems(self.libs)
 
         self.ui.library_field.setCurrentText(self.config.library)
         self.ui.add_lib_field.setCurrentText(self.config.add_lib)
@@ -194,18 +215,22 @@ class MainWindow(QMainWindow):
 
         if add_lib_dlg.exec():
             lib = add_lib_dlg.textValue()
-            libs.append(lib)
+            with self.db:
+                self.db.create_table_if_not_exist(lib)
+            self.libs.append(lib)
             self.update_libraries()
 
     def remove_lib(self) -> None:
         remove_lib_dlg = QInputDialog(self)
         remove_lib_dlg.setWindowTitle('Выберите, какую библиотеку хотите удалить')
-        remove_lib_dlg.setComboBoxItems(libs)
+        remove_lib_dlg.setComboBoxItems(self.libs)
 
         if remove_lib_dlg.exec():
             lib = remove_lib_dlg.textValue()
             if lib:
-                libs.remove(lib)
+                self.libs.remove(lib)
+                with self.db:
+                    self.db.drop_table(lib)
             self.update_libraries()
 
     def update_main_settings(self) -> None:
@@ -300,9 +325,11 @@ class DuplicatesDlg(QDialog):
             parent.setText(1, title)
             parent.setCheckState(0, Qt.CheckState.Unchecked)
             parent.setFlags(parent.flags() | Qt.ItemFlag.ItemIsAutoTristate)
-            for idx, file_path in enumerate(group):
+            for element in group:
+                song_id = element[0]
+                file_path = element[1]
                 child = QTreeWidgetItem(parent)
-                child.setText(0, str(idx))
+                child.setText(0, str(song_id))
                 child.setText(1, file_path)
                 child.setCheckState(0, Qt.CheckState.Unchecked)
 

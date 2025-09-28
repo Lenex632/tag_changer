@@ -55,11 +55,11 @@ class DBController:
         # TODO: мб подправить хардкод с file_path
         query = (f'CREATE TABLE IF NOT EXISTS {table} ({table_columns}, '
                  f'CONSTRAINT unique_file_path UNIQUE (file_path))')
+        self.logger.debug(f'Была созданна таблица: {table}')
         self.execute(query)
 
     def get_tables_list(self) -> list | tuple:
         """Возвращает имена всех несистемных таблиц из базы данных"""
-        # PERF: хз где используется, пока что только в старой версии
         query = 'SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"'
         results = self.execute_and_fetch(query)
         results = [res[0] for res in results]
@@ -82,10 +82,10 @@ class DBController:
         """Вставка значений song_data в таблицу"""
         # Подготовка значений, а то sqlite3 будет ругаться
         song_data.file_path = str(song_data.file_path)
-
         data_dict = asdict(song_data)
         # PERF: хардкод с image
         data_dict.pop('image')
+
         keys = ', '.join(data_dict.keys())
         values = tuple(data_dict.values())
         query = f'INSERT INTO {table} ({keys}) VALUES ({", ".join("?" for _ in values)})'
@@ -130,7 +130,6 @@ class DBController:
         '''
         results = self.execute_and_fetch(query)
         self.logger.debug(f'{len(results)} групп дубликатов было найдено в таблице "{table}"')
-
         duplicates = []
         for res in results:
             title = res[0]
@@ -139,11 +138,11 @@ class DBController:
             duplicate = self.find(table, condition)
             duplicates.append((title, artist, duplicate))
 
-        self.logger.debug(f'Дубликаты: {duplicate}')
-
+        self.logger.debug(f'Дубликаты: {duplicates}')
         return duplicates
 
     def find_differences(self, library1: str, library2: str) -> [list, list]:
+        # TODO: всё ещё надо адаптировать
         query = f'''SELECT file_path from {library1};'''
         dif1 = self.execute_and_fetch(query)
         query = f'''SELECT file_path from {library2};'''

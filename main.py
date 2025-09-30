@@ -31,6 +31,8 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 #   Починить бню, при копировании уже существующих файлов
 #   Посмотреть что происходит с Cyberpunk, удаляются исполнители
 #       (скорее всего, потому что их нет в названии файлов)
+#   Сделать что то с падением и записями в бд
+#   ПОЛЮБОМУ сделать многопроцессорность! Слишком долго для 4к треков!
 #   Next:
 #       Обновить README
 #       Пререписать README, тестики, скриншоты и тд.
@@ -128,7 +130,8 @@ class MainWindow(QMainWindow):
             with self.db:
                 self.db.drop_table(library)
                 self.db.create_table_if_not_exist(library)
-                for song_data in items:
+            for song_data in items:
+                with self.db:
                     self.db.insert(library, song_data)
         else:
             for song_data in items:
@@ -161,6 +164,7 @@ class MainWindow(QMainWindow):
         dlg.exec()
 
         self.remove_elements(elements=dlg.to_delete_1, directory=target_dir_1, library=lib_1)
+        self.remove_elements(elements=dlg.to_delete_2, directory=target_dir_2, library=lib_2)
         self.copy_elements(
             elements=dlg.to_sync_1,
             dir_1=target_dir_1,
@@ -168,7 +172,6 @@ class MainWindow(QMainWindow):
             lib_1=lib_1,
             lib_2=lib_2
         )
-        self.remove_elements(elements=dlg.to_delete_2, directory=target_dir_2, library=lib_2)
         self.copy_elements(
             elements=dlg.to_sync_2,
             dir_1=target_dir_2,
@@ -309,9 +312,9 @@ class MainWindow(QMainWindow):
     def remove_elements(self, elements: tuple[int, str | Path], directory: str | Path, library: str) -> None:
         self.logger.debug(elements)
         if elements:
-            with self.db:
-                for song_id, file_path in elements:
-                    full_path = Path(directory, file_path)
+            for song_id, file_path in elements:
+                full_path = Path(directory, file_path)
+                with self.db:
                     self.db.delete(table=library, song_id=song_id)
                     try:
                         full_path.unlink()
@@ -331,15 +334,15 @@ class MainWindow(QMainWindow):
         lib_1: str,
         lib_2: str
     ) -> None:
-        with self.db:
-            for song_id, file_path in elements:
-                full_path_1 = Path(dir_1, file_path)
-                full_path_2 = Path(dir_2, file_path)
-                self.logger.debug(f'{full_path_1} -> {full_path_2}')
+        for song_id, file_path in elements:
+            full_path_1 = Path(dir_1, file_path)
+            full_path_2 = Path(dir_2, file_path)
+            self.logger.debug(f'{full_path_1} -> {full_path_2}')
+            with self.db:
                 db_data = SongData(*self.db.find(lib_1, f"song_id = '{song_id}'")[1:])
                 self.db.insert(lib_2, db_data)
-                full_path_2.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(full_path_1, full_path_2)
+            full_path_2.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(full_path_1, full_path_2)
 
 
 class DuplicatesDlg(QDialog):
@@ -403,7 +406,7 @@ class SyncDlg(QDialog):
             element.setText(1, artist)
             element.setText(2, title)
             element.setText(3, file_path)
-            element.setCheckState(0, Qt.CheckState.Unchecked)
+            element.setCheckState(0, Qt.CheckState.Checked)
         self.ui.sync_dlg_tree_1.resizeColumnToContents(0)
         self.ui.sync_dlg_tree_1.resizeColumnToContents(1)
         self.ui.sync_dlg_tree_1.resizeColumnToContents(2)
@@ -417,7 +420,7 @@ class SyncDlg(QDialog):
             element.setText(1, artist)
             element.setText(2, title)
             element.setText(3, file_path)
-            element.setCheckState(0, Qt.CheckState.Unchecked)
+            element.setCheckState(0, Qt.CheckState.Checked)
         self.ui.sync_dlg_tree_2.resizeColumnToContents(0)
         self.ui.sync_dlg_tree_2.resizeColumnToContents(1)
         self.ui.sync_dlg_tree_2.resizeColumnToContents(2)

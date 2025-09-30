@@ -21,7 +21,7 @@ class TagChanger:
         self.target_dir = None
         self.artist_dirs = None
         # TEST: посмотреть как он работает с картинками и FLAC
-        self.allow_suffixes = set('.mp3')
+        self.allow_suffixes = set(('.mp3', ))
 
         # цифры + скобки|пробелы|точки|прочее
         self.pattern_to_number = re.compile(r'^\d+(\W | \W | |\)|\) )')
@@ -43,7 +43,8 @@ class TagChanger:
     def split_fullname(self, target: str) -> [str, str]:
         """Разделение на artist, title"""
         try:
-            artist, title = target.split(' - ')
+            # TEST: разделение до первого тире
+            artist, title = target.split(' - ')[:2]
         except ValueError:
             artist = ''
             title = target
@@ -178,6 +179,10 @@ class TagChanger:
         elif level == 2:
             # в папке с альбомом
             album = relative_path.parts[1]
+            try:
+                artist = artist or song.tag.artist
+            except AttributeError:  # TEST: с image понятно, а может ли быть здесь?
+                artist = artist
         elif level == 3:
             # в исполнителе без альбома (создаётся папка с альбомом)
             try:
@@ -232,7 +237,7 @@ class TagChanger:
         for file_path in directory.iterdir():
             if file_path.is_dir():
                 yield from self.start(file_path)
-            elif file_path.is_file() and file_path.suffix not in self.allow_suffixes:
+            elif file_path.is_file() and file_path.suffix in self.allow_suffixes:
                 song_data = self.get_info_from_file(file_path)
                 self.change_tags(song_data)
                 yield song_data
@@ -241,15 +246,23 @@ class TagChanger:
 def main(linux: bool = True) -> None:
     file_path = '/home/lenex/code/tag_changer/test_target_dir/' \
         if linux else 'C:\\code\\tag_changer\\test_target_dir'
+
+    target_dir = '/mnt/c/Users/Lenex/Music/Music/'
+    file_path = '/mnt/c/Users/Lenex/Music/Music/=)/Themes/'
+
     tc = TagChanger()
-    tc.target_dir = Path(file_path)
+    tc.target_dir = Path(target_dir)
     tc.artist_dirs = ['Legend', 'Легенды']
-    items = tc.start(tc.target_dir)
-    with DBController('test') as db:
-        db.create_table_if_not_exist('main')
-        for song_data in items:
-            db.insert('main', song_data)
-    tc.delete_images(tc.target_dir)
+    items = tc.start(Path(file_path))
+
+    for item in items:
+        ...
+
+    # with DBController('test') as db:
+    #     db.create_table_if_not_exist('main')
+    #     for song_data in items:
+    #         db.insert('main', song_data)
+    # tc.delete_images(Path(file_path))
 
 
 def test_linux() -> None:
@@ -270,6 +283,7 @@ def test_wind() -> None:
 def test_img() -> None:
     # file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
     file_path = '/home/lenex/Music/abc-cba.mp3'
+    file_path = '/mnt/c/Users/Lenex/Music/Music1/=)/Atomic Heart/DVRST - Komarovo.mp3'
     song = eyed3.load(file_path)
     print(song.tag.images)
     print(song.tag.images._fs)

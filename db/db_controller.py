@@ -140,14 +140,13 @@ class DBController:
         for res in results:
             title = res[0]
             artist = res[1]
-            condition = f"title = '{title}' AND artist = '{artist}'"
+            condition = f'title = "{title}" AND artist = "{artist}"'
             duplicate = self.find(table, condition)
             duplicates.append((title, artist, duplicate))
         self.logger.debug(f'Дубликаты:\n{duplicates}')
         return duplicates
 
     def find_differences(self, lib_1: str, lib_2: str) -> [tuple, tuple]:
-        # TODO: всё ещё надо адаптировать
         query = f'''
             SELECT {lib_1}.song_id, {lib_2}.song_id
             FROM {lib_1} LEFT JOIN {lib_2}
@@ -158,7 +157,6 @@ class DBController:
             ON {lib_1}.file_path = {lib_2}.file_path;
         '''
         result = self.execute_and_fetch(query)
-
         for res in result:
             self.logger.debug(res)
 
@@ -170,12 +168,6 @@ class DBController:
             if song_id_2 is None:
                 condition = f"song_id = '{song_id_1}'"
                 to_sync_1.append(self.find(lib_1, condition))
-
-        for x in to_sync_1:
-            print(x)
-        print('------------------------------------')
-        for x in to_sync_2:
-            print(x)
 
         return to_sync_1, to_sync_2
 

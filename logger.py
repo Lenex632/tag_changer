@@ -65,6 +65,8 @@ LOGGING = {
 
 
 def set_up_logger_config():
+    if not file.exists() or error.exists():
+        Path(Path(__file__).parent, 'logs').mkdir(parents=True, exist_ok=True)
     logging.config.dictConfig(LOGGING)
 
 

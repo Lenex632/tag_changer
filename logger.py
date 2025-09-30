@@ -33,7 +33,7 @@ LOGGING = {
     'handlers': {
         'console_handler': {
             'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'default',
             'filters': ['filter']
         },
@@ -59,7 +59,7 @@ LOGGING = {
         'TagChanger': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
         'DBController': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
         'Config': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
-        'UI': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
+        'Main': {'handlers': ['console_handler', 'file_handler', 'error_handler'], 'level': 'DEBUG'},
     }
 }
 

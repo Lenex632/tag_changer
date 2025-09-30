@@ -9,16 +9,19 @@ from model import SongData
 
 
 # TODO:
-#     * Посмотреть библиотеки для парсинга и почитать о
-#     компиляторах, возможно получится упростить процедуру
-#     обработки имён фалов.
-#     * Поработать с изображениями. Сейчас они либо шакалятся,
-#     либо берутся чёрт-пойми-откуда, либо ещё чего =(
+#   * Посмотреть библиотеки для парсинга и почитать о
+#   компиляторах, возможно получится упростить процедуру
+#   обработки имён фалов.
+#   * Поработать с изображениями. Сейчас они либо шакалятся,
+#   либо берутся чёрт-пойми-откуда, либо ещё чего =(
+#   * Придумать что можно сдеать с FLAC и другими не MP3 форматами
 class TagChanger:
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
         self.target_dir = None
         self.artist_dirs = None
+        # TEST: посмотреть как он работает с картинками и FLAC
+        self.allow_suffixes = set('.mp3')
 
         # цифры + скобки|пробелы|точки|прочее
         self.pattern_to_number = re.compile(r'^\d+(\W | \W | |\)|\) )')
@@ -134,12 +137,12 @@ class TagChanger:
         """Удаляет все изображения из target_dir за исключением 'помеченных'"""
         # TODO: удалять надо после того как функция закончилась.
         # Она рекурсивная, а вызывает каждый раз с глобальной переменной
-        for file in target_dir.iterdir():
-            if file.is_dir():
-                self.delete_images(file)
-            elif file.suffix == '.jpg' and file.parent.name not in ['The Best', 'Nirvana', 'OSU']:
-                self.logger.debug(f'Удаление обложки: "{file}"')
-                file.unlink()
+        for target in target_dir.iterdir():
+            if target.is_dir():
+                self.delete_images(target)
+            elif target.suffix == '.jpg' and target.parent.name not in ['The Best', 'Nirvana', 'OSU']:
+                self.logger.debug(f'Удаление обложки: "{target}"')
+                target.unlink()
 
     def get_info_from_file(self, file_path: Path) -> SongData:
         """
@@ -229,7 +232,7 @@ class TagChanger:
         for file_path in directory.iterdir():
             if file_path.is_dir():
                 yield from self.start(file_path)
-            elif file_path.is_file() and file_path.suffix != '.jpg':
+            elif file_path.is_file() and file_path.suffix not in self.allow_suffixes:
                 song_data = self.get_info_from_file(file_path)
                 self.change_tags(song_data)
                 yield song_data

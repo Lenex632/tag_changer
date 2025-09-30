@@ -1,6 +1,6 @@
+import shutil
 import logging
 import sys
-import time
 
 from pathlib import Path
 
@@ -14,38 +14,30 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QLineEdit,
     QTreeWidgetItem,
-    QProgressBar
+    # QProgressBar
 )
 
 from db import DBController
 from config import AppConfig
+from model import SongData
 from tag_changer import TagChanger
 
 from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 
 # TODO:
-#   перенести все todo, настройки и прочее с прошлого файла
-#   пререписать README, тестики, скриншоты и тд.
-#   посмотреть, можно ли работу с кастомными функциями привязать в QtCreator, что бы тут не захламлять код
-#   перенести всё с old
-#   ...
-
-sync_1 = [
-    ["artist1", "name1", "path1"],
-    ["artist2", "name2", "path2"],
-    ["artist3", "name3", "path3"],
-]
-sync_2 = [
-    ["artist11", "name11", "path11"],
-    ["artist12", "name12", "path12"],
-    ["artist13", "name13", "path13"],
-    ["artist14", "name14", "path14"],
-    [
-        "super duper big artisn name with extra chease",
-        "some name that contains a lot of letters and big coke",
-        "path/so/far/away/that/even/you/mam/cant/find/your/large/soda/"
-    ]
-]
+#   Посмотреть, можно ли работу с кастомными функциями
+#       привязать в QtCreator, что бы тут не захламлять код
+#   Починить бню, когда попадаются файлы НЕ MP3
+#   Починить бню, при копировании уже существующих файлов
+#   Посмотреть что происходит с Cyberpunk, удаляются исполнители
+#       (скорее всего, потому что их нет в названии файлов)
+#   Next:
+#       Обновить README
+#       Пререписать README, тестики, скриншоты и тд.
+#       "Добавление"
+#       Прогрессбар
+#       Сделать artist_dir нормальным списком
+#           + что бы кирилица не шифровалась в абракадабру
 
 
 def toggle_check_state(tree_item: QTreeWidgetItem):
@@ -57,7 +49,7 @@ def toggle_check_state(tree_item: QTreeWidgetItem):
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
-        self.logger = logging.getLogger('UI')
+        self.logger = logging.getLogger('Main')
         super().__init__()
         self.ui = Ui_MainWindow()
         self.config = AppConfig()
@@ -158,18 +150,32 @@ class MainWindow(QMainWindow):
         self.remove_elements(elements=dlg.results, directory=directory, library=library)
 
     def start_sync(self) -> None:
-        # TODO: удаление проведено успешно, теперь нужно ещё и добавление =_=
-        target_dir_1 = self.ui.duplicates_dir_field.text()
+        # TODO: выводить какие-то сообщения с результатом работы
+        target_dir_1 = self.ui.sync_dir_field_1.text()
         lib_1 = self.ui.sync_lib_field_1.currentText()
-        target_dir_2 = self.ui.duplicates_dir_field.text()
+        target_dir_2 = self.ui.sync_dir_field_2.text()
         lib_2 = self.ui.sync_lib_field_2.currentText()
         with self.db:
             sync_elements_1, sync_elements_2 = self.db.find_differences(lib_1, lib_2)
         dlg = SyncDlg(sync_elements_1, sync_elements_2, parent=self)
         dlg.exec()
 
-        self.remove_elements(elements=dlg.results_1, directory=target_dir_1, library=lib_1)
-        self.remove_elements(elements=dlg.results_2, directory=target_dir_2, library=lib_2)
+        self.remove_elements(elements=dlg.to_delete_1, directory=target_dir_1, library=lib_1)
+        self.copy_elements(
+            elements=dlg.to_sync_1,
+            dir_1=target_dir_1,
+            dir_2=target_dir_2,
+            lib_1=lib_1,
+            lib_2=lib_2
+        )
+        self.remove_elements(elements=dlg.to_delete_2, directory=target_dir_2, library=lib_2)
+        self.copy_elements(
+            elements=dlg.to_sync_2,
+            dir_1=target_dir_2,
+            dir_2=target_dir_1,
+            lib_1=lib_2,
+            lib_2=lib_1
+        )
 
     def show_message(self, message: str) -> None:
         self.ui.statusBar.showMessage(message, 4000)
@@ -317,6 +323,24 @@ class MainWindow(QMainWindow):
                         self.logger.error('Не удалось удалить файл. Изменения в бд отмененны')
                         raise
 
+    def copy_elements(
+        self,
+        elements: tuple[int, str | Path],
+        dir_1: str | Path,
+        dir_2: str | Path,
+        lib_1: str,
+        lib_2: str
+    ) -> None:
+        with self.db:
+            for song_id, file_path in elements:
+                full_path_1 = Path(dir_1, file_path)
+                full_path_2 = Path(dir_2, file_path)
+                self.logger.debug(f'{full_path_1} -> {full_path_2}')
+                db_data = SongData(*self.db.find(lib_1, f"song_id = '{song_id}'")[1:])
+                self.db.insert(lib_2, db_data)
+                full_path_2.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(full_path_1, full_path_2)
+
 
 class DuplicatesDlg(QDialog):
     def __init__(self, duplicates: list, parent=None) -> None:
@@ -368,8 +392,10 @@ class SyncDlg(QDialog):
         self.ui.setupUi(self)
         self.sync_elements_1 = sync_elements_1
         self.sync_elements_2 = sync_elements_2
-        self.results_1 = []
-        self.results_2 = []
+        self.to_delete_1 = []
+        self.to_delete_2 = []
+        self.to_sync_1 = []
+        self.to_sync_2 = []
 
         for song_id, file_path, title, artist, *_ in self.sync_elements_1:
             element = QTreeWidgetItem(self.ui.sync_dlg_tree_1)
@@ -405,15 +431,19 @@ class SyncDlg(QDialog):
     def accept_changes(self) -> None:
         for i in range(self.ui.sync_dlg_tree_1.topLevelItemCount()):
             item = self.ui.sync_dlg_tree_1.topLevelItem(i)
+            song_id, file_path = item.text(0), item.text(3)
             if item.checkState(0) is Qt.CheckState.Unchecked:
-                song_id, file_path = item.text(0), item.text(3)
-                self.results_1.append((song_id, file_path))
+                self.to_delete_1.append((song_id, file_path))
+            else:
+                self.to_sync_1.append((song_id, file_path))
 
         for i in range(self.ui.sync_dlg_tree_2.topLevelItemCount()):
             item = self.ui.sync_dlg_tree_2.topLevelItem(i)
+            song_id, file_path = item.text(0), item.text(3)
             if item.checkState(0) is Qt.CheckState.Unchecked:
-                song_id, file_path = item.text(0), item.text(3)
-                self.results_2.append((song_id, file_path))
+                self.to_delete_2.append((song_id, file_path))
+            else:
+                self.to_sync_2.append((song_id, file_path))
 
 
 def main() -> None:

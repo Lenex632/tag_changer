@@ -126,7 +126,7 @@ class AppConfig:
         self.config['sync']['sync_lib_2'] = value
 
 
-def main():
+def test_main():
     config = AppConfig()
     print(config.target_dir)
     config.target_dir = ''
@@ -143,5 +143,5 @@ if __name__ == "__main__":
     from logger import set_up_logger_config
     set_up_logger_config()
 
-    main()
+    test_main()
 

@@ -7,6 +7,9 @@ from pathlib import Path
 from model import SongData, TableModel
 
 
+# TODO: Попробовать логировать ошибку на моменте execute,
+# и не откатывать изменения при каждой проблеме,
+# возможно это будет не безопасно.
 class DBController:
     def __init__(self, db_name: str = 'music') -> None:
         """
@@ -35,17 +38,26 @@ class DBController:
     def execute(self, query: str, params: tuple | list | None = None) -> None:
         """Выполняет запрос query, ничего не возвращает"""
         cursor = self.connection.cursor()
-        if params is not None:
-            cursor.execute(query, params)
-        else:
-            cursor.execute(query)
+        try:
+            if params is not None:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+        except Exception as e:
+            self.logger.error(f'Не удалось выполнить запрос в бд: "{query}", "{params}"')
+            self.logger.critical(e, exc_info=True)
         cursor.close()
 
     def execute_and_fetch(self, query: str):
         """Выполняет запрос query, возвращает полученные в его результате значения"""
         cursor = self.connection.cursor()
-        cursor.execute(query)
-        result = cursor.fetchall()
+        try:
+            cursor.execute(query)
+            result = cursor.fetchall()
+        except Exception as e:
+            self.logger.error(f'Не удалось выполнить запрос в бд: "{query}"')
+            self.logger.critical(e, exc_info=True)
+            result = None
         cursor.close()
         return result
 

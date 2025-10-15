@@ -32,6 +32,7 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 #   Посмотреть что происходит с Cyberpunk, удаляются исполнители
 #       (скорее всего, потому что их нет в названии файлов)
 #   Сделать что то с падением и записями в бд
+#   Сделать "частичное" изменение тэгов + добавление в бд. from_dir -> to_dir
 #   ПОЛЮБОМУ сделать многопроцессорность! Слишком долго для 4к треков!
 #   Next:
 #       Обновить README
@@ -40,6 +41,8 @@ from ui import Ui_MainWindow, Ui_DuplicatesDlg, Ui_SyncDlg
 #       Прогрессбар
 #       Сделать artist_dir нормальным списком
 #           + что бы кирилица не шифровалась в абракадабру
+#       В python 3.14 появильсь t-строки их можно попробовать поюзать в БД
+#           что бы не было проблем с иньекциями
 
 
 def toggle_check_state(tree_item: QTreeWidgetItem):
@@ -77,7 +80,7 @@ class MainWindow(QMainWindow):
         self.ui.add_lib_button.clicked.connect(self.add_lib)
         self.ui.remove_lib_button.clicked.connect(self.remove_lib)
 
-        self.ui.start_button_2.clicked.connect(lambda: self.show_message('some 2'))
+        self.ui.start_button_2.clicked.connect(self.start_add)
         self.ui.save_button_2.clicked.connect(self.save_add_settings)
         self.ui.save_button_2.clicked.connect(lambda: self.show_message('Настройки сохранены'))
         self.ui.reset_button_2.clicked.connect(self.reset_add_settings)
@@ -138,6 +141,28 @@ class MainWindow(QMainWindow):
                 pass
         self.tag_changer.delete_images(target_dir)
 
+        self.show_message('Скрипт завершил работу')
+        self.logger.info('Скрипт завершил работу')
+
+    def start_add(self) -> None:
+        self.ui.statusBar.showMessage('Скрипт начал работу')
+        from_dir = Path(self.ui.from_dir_field.text())
+        to_dir = Path(self.ui.to_dir_field.text())
+        library = self.ui.add_lib_field.currentText()
+        artist_dirs = self.ui.artist_dir_field.toPlainText().split('\n')
+        self.tag_changer.target_dir = from_dir
+        self.tag_changer.artist_dirs = artist_dirs
+
+        self.logger.info('Запуск скрипта')
+        items = self.tag_changer.start(from_dir)
+        for song_data in items:
+            with self.db:
+                self.db.insert(library, song_data)
+            path_1 = Path(from_dir, song_data.file_path)
+            path_2 = Path(to_dir, song_data.file_path)
+            path_2.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(path_1, path_2, shutil.copyfile)
+        self.tag_changer.delete_images(from_dir)
         self.show_message('Скрипт завершил работу')
         self.logger.info('Скрипт завершил работу')
 

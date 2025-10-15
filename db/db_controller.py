@@ -67,8 +67,8 @@ class DBController:
         # TODO: мб подправить хардкод с file_path
         query = (f'CREATE TABLE IF NOT EXISTS {table} ({table_columns}, '
                  f'CONSTRAINT unique_file_path UNIQUE (file_path))')
-        self.logger.debug(f'Была созданна таблица: {table}')
         self.execute(query)
+        self.logger.debug(f'Была созданна таблица: {table}')
 
     def get_tables_list(self) -> list | tuple:
         """Возвращает имена всех несистемных таблиц из базы данных"""
@@ -136,8 +136,8 @@ class DBController:
                    должны заключаться в одинарные кавычки
         """
         query = f'UPDATE {table} SET {new} WHERE {condition}'
-        self.logger.debug(f'В элементах с условием {condition} в таблице {table} были обновлены параметры: {new}')
         self.execute(query)
+        self.logger.debug(f'В элементах с условием {condition} в таблице {table} были обновлены параметры: {new}')
 
     def find_duplicates(self, table: str) -> list[tuple]:
         query = f'''

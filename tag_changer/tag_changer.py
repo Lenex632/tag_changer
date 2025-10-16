@@ -219,8 +219,8 @@ class TagChanger:
         song.tag.album = song_data.album
         if song_data.image:
             with open(song_data.image, "rb") as image:
-                # TODO: вот тут надо как-то понять,
-                #   где картинки шакалятся и как они вообще храняться?
+                # TODO: вот тут надо как-то понять, 
+                # может другие цифры подругому картинки хранят
                 song.tag.images.set(3, image.read(), "image/jpeg")
         song.tag.save()
         self.logger.info(f'{song_data.album:^20} | {song_data.artist:^20} | {song_data.title:^20}')
@@ -243,10 +243,8 @@ class TagChanger:
                 yield song_data
 
 
-def main(linux: bool = True) -> None:
-    file_path = '/home/lenex/code/tag_changer/test_target_dir/' \
-        if linux else 'C:\\code\\tag_changer\\test_target_dir'
-
+def main() -> None:
+    # file_path = '/home/lenex/code/tag_changer/test_target_dir/'
     target_dir = '/mnt/c/Users/Lenex/Music/Music/'
     file_path = '/mnt/c/Users/Lenex/Music/Music/=)/Themes/'
 
@@ -265,16 +263,9 @@ def main(linux: bool = True) -> None:
     # tc.delete_images(Path(file_path))
 
 
-def test_linux() -> None:
+def test() -> None:
     # проверки и возможные функции для вычисления или извлечения данных
     file_path = '/home/lenex/code/tag_changer/test_target_dir/Legend/Saint Asonia/Saint Asonia - Weak & Tired.mp3'
-    song = eyed3.load(file_path)
-    song.initTag()
-    song.tag.remove(file_path)
-
-
-def test_wind() -> None:
-    file_path = 'C:\\code\\tag_changer\\test_tag_change\\Legend\\Saint Asonia\\Flawed Design\\Saint Asonia,Sharon den Adel - Sirens.mp3'
     song = eyed3.load(file_path)
     song.initTag()
     song.tag.remove(file_path)
@@ -300,7 +291,6 @@ if __name__ == '__main__':
     set_up_logger_config()
 
     main()
-    # test_wind()
-    # test_linux()
+    # test()
     # test_img()
 

@@ -1,6 +1,8 @@
 import logging
-from pathlib import Path
 import re
+
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 import eyed3
 
@@ -106,9 +108,7 @@ class TagChanger:
         image_path = Path(file_dir, album + '.jpg')
 
         if images:
-            image = images[0]
-            if image.stem != album:
-                image.rename(image_path)
+            image_path = images[0]
             self.logger.debug(f'Обложка получена из файла: "{str(image_path)}"')
             return image_path
         else:
@@ -225,42 +225,51 @@ class TagChanger:
         song.tag.save()
         self.logger.info(f'{song_data.album:^20} | {song_data.artist:^20} | {song_data.title:^20}')
 
+    def process_song(self, file_path: Path) -> SongData:
+        song_data = self.get_info_from_file(file_path)
+        self.change_tags(song_data)
+        return song_data
+
+    def process_dir(self, directory: Path) -> list:
+        main_queue = []
+        for file_path in directory.iterdir():
+            if file_path.is_dir():
+                main_queue.extend(self.process_dir(file_path))
+            elif file_path.is_file() and file_path.suffix in self.allow_suffixes:
+                main_queue.append(file_path)
+        return main_queue
+
     def start(self, directory: Path):
         """
         Основная выполняющая функция, которая рекурсивно
         пробегается по всем файлам в directory и изменяет их
         """
-        # TODO: может сделать не генератом а созданием тасков?
-        #     чтобы потом и в бд можно было закинуть колбэком
-        #     и посчитать, сколько задачь стоит для прогресс бара
-        #     при этом не сильно тратится на выделение памяти для 4000 песен
-        for file_path in directory.iterdir():
-            if file_path.is_dir():
-                yield from self.start(file_path)
-            elif file_path.is_file() and file_path.suffix in self.allow_suffixes:
-                song_data = self.get_info_from_file(file_path)
-                self.change_tags(song_data)
-                yield song_data
+
+        main_queue = self.process_dir(directory)
+        self.logger.info(len(main_queue))
+
+        with ProcessPoolExecutor() as executor:
+            resluts = executor.map(self.process_song, main_queue)
+        return resluts
 
 
 def main() -> None:
-    # file_path = '/home/lenex/code/tag_changer/test_target_dir/'
-    target_dir = '/mnt/c/Users/Lenex/Music/Music/'
-    file_path = '/mnt/c/Users/Lenex/Music/Music/=)/Themes/'
+    # file_path = Path('/home/lenex/code/tag_changer/test_target_dir/')
+    # target_dir = Path('/mnt/c/Users/Lenex/Music/Music/')
+    # file_path = Path('/mnt/c/Users/Lenex/Music/Music/=)/Themes/')
+    file_path = target_dir = Path('/mnt/c/code/tag_changer/test_target_dir/')
 
     tc = TagChanger()
-    tc.target_dir = Path(target_dir)
+    tc.target_dir = target_dir
     tc.artist_dirs = ['Legend', 'Легенды']
-    items = tc.start(Path(file_path))
+    items = tc.start(file_path)
 
-    for item in items:
-        ...
-
-    # with DBController('test') as db:
-    #     db.create_table_if_not_exist('main')
-    #     for song_data in items:
-    #         db.insert('main', song_data)
-    # tc.delete_images(Path(file_path))
+    with DBController('test') as db:
+        db.drop_table('main')
+        db.create_table_if_not_exist('main')
+        for song_data in items:
+            db.insert('main', song_data)
+    tc.delete_images(file_path)
 
 
 def test() -> None:

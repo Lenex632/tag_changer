@@ -123,12 +123,8 @@ class MainWindow(QMainWindow):
             with self.db:
                 self.db.drop_table(library)
                 self.db.create_table_if_not_exist(library)
-            for song_data in items:
-                with self.db:
+                for song_data in items:
                     self.db.insert(library, song_data)
-        else:
-            for song_data in items:
-                pass
         self.tag_changer.delete_images(target_dir)
 
         self.show_message('Скрипт завершил работу')
